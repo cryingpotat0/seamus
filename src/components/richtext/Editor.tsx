@@ -227,7 +227,6 @@ export default function Editor(): JSX.Element {
                 {shouldUseLexicalContextMenu && <ContextMenuPlugin />}
                 {shouldAllowHighlightingWithBrackets && <SpecialTextPlugin />}
                 <ActionsPlugin
-                    isRichText={true}
                     shouldPreserveNewLinesInMarkdown={shouldPreserveNewLinesInMarkdown}
                 />
             </div>

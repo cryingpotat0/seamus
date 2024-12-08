@@ -19,6 +19,7 @@ import {
 import { useCollaborationContext } from '@lexical/react/LexicalCollaborationContext';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import { mergeRegister } from '@lexical/utils';
+import { $generateHtmlFromNodes } from '@lexical/html';
 import {
     $createTextNode,
     $getRoot,
@@ -87,10 +88,8 @@ async function shareDoc(doc: SerializedDocument): Promise<void> {
 }
 
 export default function ActionsPlugin({
-    isRichText,
     shouldPreserveNewLinesInMarkdown,
 }: {
-    isRichText: boolean;
     shouldPreserveNewLinesInMarkdown: boolean;
 }): JSX.Element {
     const [editor] = useLexicalComposerContext();
@@ -250,6 +249,17 @@ export default function ActionsPlugin({
                 title="Read-Only Mode"
                 aria-label={`${!isEditable ? 'Unlock' : 'Lock'} read-only mode`}>
                 <i className={!isEditable ? 'unlock' : 'lock'} />
+            </button>
+            <button
+                className="action-button export"
+                onClick={() =>
+                    editor.update(() => {
+                        console.log($generateHtmlFromNodes(editor, null))
+                    })
+                }
+                title="Export 2"
+                aria-label="Export editor state to HTML">
+                <i className="export" />
             </button>
             {modal}
         </div>

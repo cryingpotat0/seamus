@@ -23,6 +23,9 @@ importers:
       '@lexical/hashtag':
         specifier: 0.21.0
         version: 0.21.0
+      '@lexical/html':
+        specifier: ^0.21.0
+        version: 0.21.0
       '@lexical/link':
         specifier: 0.21.0
         version: 0.21.0
