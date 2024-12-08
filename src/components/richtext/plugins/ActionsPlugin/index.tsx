@@ -227,23 +227,6 @@ export default function ActionsPlugin({
                 <i className="export" />
             </button>
             <button
-                className="action-button share"
-                disabled={isCollabActive || INITIAL_SETTINGS.isCollab}
-                onClick={() =>
-                    shareDoc(
-                        serializedDocumentFromEditorState(editor.getEditorState(), {
-                            source: 'Playground',
-                        }),
-                    ).then(
-                        () => showFlashMessage('URL copied to clipboard'),
-                        () => showFlashMessage('URL could not be copied to clipboard'),
-                    )
-                }
-                title="Share"
-                aria-label="Share Playground link to current editor state">
-                <i className="share" />
-            </button>
-            <button
                 className="action-button clear"
                 disabled={isEditorEmpty}
                 onClick={() => {
@@ -268,26 +251,6 @@ export default function ActionsPlugin({
                 aria-label={`${!isEditable ? 'Unlock' : 'Lock'} read-only mode`}>
                 <i className={!isEditable ? 'unlock' : 'lock'} />
             </button>
-            <button
-                className="action-button"
-                onClick={handleMarkdownToggle}
-                title="Convert From Markdown"
-                aria-label="Convert from markdown">
-                <i className="markdown" />
-            </button>
-            {isCollabActive && (
-                <button
-                    className="action-button connect"
-                    onClick={() => {
-                        // editor.dispatchCommand(TOGGLE_CONNECT_COMMAND, !connected);
-                    }}
-                    title={`${connected ? 'Disconnect' : 'Connect'
-                        } Collaborative Editing`}
-                    aria-label={`${connected ? 'Disconnect from' : 'Connect to'
-                        } a collaborative editing server`}>
-                    <i className={connected ? 'disconnect' : 'connect'} />
-                </button>
-            )}
             {modal}
         </div>
     );

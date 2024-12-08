@@ -211,7 +211,7 @@ function App(): JSX.Element {
             <SharedHistoryContext>
                 <TableContext>
                     <ToolbarContext>
-                        <div className="editor-shell">
+                        <div className="editor-shell border border-black">
                             <Editor />
                         </div>
                     </ToolbarContext>
