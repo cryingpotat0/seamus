@@ -16,23 +16,17 @@ import {
     $getRoot,
     $isTextNode,
     DOMConversionMap,
+    EditorState,
     TextNode,
 } from 'lexical';
 
-import { isDevPlayground } from './appSettings';
 import { FlashMessageContext } from './context/FlashMessageContext';
-import { SettingsContext, useSettings } from './context/SettingsContext';
 import { SharedHistoryContext } from './context/SharedHistoryContext';
 import { ToolbarContext } from './context/ToolbarContext';
 import Editor from './Editor';
 import PlaygroundNodes from './nodes/PlaygroundNodes';
-import DocsPlugin from './plugins/DocsPlugin';
-import PasteLogPlugin from './plugins/PasteLogPlugin';
 import { TableContext } from './plugins/TablePlugin';
-import TestRecorderPlugin from './plugins/TestRecorderPlugin';
 import { parseAllowedFontSize } from './plugins/ToolbarPlugin/fontSize';
-import TypingPerfPlugin from './plugins/TypingPerfPlugin';
-import Settings from './Settings';
 import PlaygroundEditorTheme from './themes/PlaygroundEditorTheme';
 import { parseAllowedColor } from './ui/ColorPicker';
 import './index.css';
@@ -186,17 +180,19 @@ function buildImportMap(): DOMConversionMap {
     return importMap;
 }
 
-function App(): JSX.Element {
-    const {
-        settings: { isCollab, emptyEditor, measureTypingPerf },
-    } = useSettings();
+export default function App({
+    initialEditorState,
+    stateRef,
+}: {
+    initialEditorState?: string;
+    stateRef?: {
+        ref: React.MutableRefObject<any>;
+        fieldName: string;
+    }
+}): JSX.Element {
 
     const initialConfig = {
-        editorState: isCollab
-            ? null
-            : emptyEditor
-                ? undefined
-                : $prepopulatedRichText,
+        editorState: initialEditorState || undefined,
         html: { import: buildImportMap() },
         namespace: 'Playground',
         nodes: [...PlaygroundNodes],
@@ -207,24 +203,18 @@ function App(): JSX.Element {
     };
 
     return (
-        <LexicalComposer initialConfig={initialConfig}>
-            <SharedHistoryContext>
-                <TableContext>
-                    <ToolbarContext>
-                        <div className="editor-shell border border-black">
-                            <Editor />
-                        </div>
-                    </ToolbarContext>
-                </TableContext>
-            </SharedHistoryContext>
-        </LexicalComposer>
-    );
-}
-
-export default function PlaygroundApp(): JSX.Element {
-    return (
         <FlashMessageContext>
-            <App />
+            <LexicalComposer initialConfig={initialConfig}>
+                <SharedHistoryContext>
+                    <TableContext>
+                        <ToolbarContext>
+                            <div className="editor-shell border border-black">
+                                <Editor stateRef={stateRef} />
+                            </div>
+                        </ToolbarContext>
+                    </TableContext>
+                </SharedHistoryContext>
+            </LexicalComposer>
         </FlashMessageContext>
     );
 }

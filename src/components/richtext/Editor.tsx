@@ -7,6 +7,7 @@
  */
 
 import { AutoFocusPlugin } from '@lexical/react/LexicalAutoFocusPlugin';
+import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin';
 import { CharacterLimitPlugin } from '@lexical/react/LexicalCharacterLimitPlugin';
 import { CheckListPlugin } from '@lexical/react/LexicalCheckListPlugin';
 import { ClearEditorPlugin } from '@lexical/react/LexicalClearEditorPlugin';
@@ -68,13 +69,22 @@ import TreeViewPlugin from './plugins/TreeViewPlugin';
 import TwitterPlugin from './plugins/TwitterPlugin';
 import YouTubePlugin from './plugins/YouTubePlugin';
 import ContentEditable from './ui/ContentEditable';
+import { EditorState } from 'lexical';
 
 const CAN_USE_DOM: boolean =
     typeof window !== 'undefined' &&
     typeof window.document !== 'undefined' &&
     typeof window.document.createElement !== 'undefined';
 
-export default function Editor(): JSX.Element {
+export default function Editor({
+    stateRef,
+
+}: {
+    stateRef?: {
+        ref: React.MutableRefObject<any>;
+        fieldName: string;
+    }
+}): JSX.Element {
     const { historyState } = useSharedHistoryContext();
     const {
         settings: {
@@ -126,6 +136,7 @@ export default function Editor(): JSX.Element {
         };
     }, [isSmallWidthViewport]);
 
+
     const placeholder = 'Start typing';
 
     return (
@@ -139,6 +150,13 @@ export default function Editor(): JSX.Element {
             <ShortcutsPlugin
                 editor={activeEditor}
                 setIsLinkEditMode={setIsLinkEditMode}
+            />
+            <OnChangePlugin
+                onChange={(editorState) => {
+                    if (stateRef?.ref.current) {
+                        stateRef.ref.current[stateRef.fieldName] = JSON.stringify(editorState);
+                    }
+                }}
             />
             <div
                 className={`editor-container ${showTreeView ? 'tree-view' : ''}`}>
