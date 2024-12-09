@@ -5,11 +5,11 @@ Seamus (like CeeEmUss) is a CMS for my blog built on top of Convex. The goal of 
 ### TODOs
 1. First goal is to get this integrated e2e with the blog. This involves a few things to add:
 
-- Improve the way that editorState for rich text is persisted
-    - Ideally this will - on save - send a "request" to all the rich text entries to get their JSON. Then use this to save.
-- Ability to delete post
-- Proper date picker
-- Test integration with Astro blog
+- :check: Improve the way that editorState for rich text is persisted
+  :check:   - Ideally this will - on save - send a "request" to all the rich text entries to get their JSON. Then use this to save.
+- :check: Ability to delete post
+- :check: Proper date picker
+- :check: Test integration with Astro blog
 - Jupyter Renderer integration
 - Cannon integration
 - Add support for tags from a fixed list defined 
