@@ -12,7 +12,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { EditView } from "./EditView";
-import { Field, schema } from "./lib/schema";
+import { BooleanField, DateField, Field, Int64Field, PlainText, RichText, schema } from "./lib/schema";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Trash2 } from "lucide-react";
 
 const defaultCollection = Object.keys(schema)[0];
 
@@ -65,47 +77,94 @@ function CollectionTable({
 }: {
     collectionName: string;
     setSelectedItem: (item: { collectionName: string; id: string }) => void;
-
 }) {
     const collections = useQuery(api.collections.list, {
         collectionName,
     });
-    return (
-        <Table>
-            <TableHeader>
-                <TableRow>
-                    {schema[collectionName].fields.map((field) => (
-                        <TableHead key={field.name}>{field.name}</TableHead>
-                    ))}
-                </TableRow>
-            </TableHeader>
-            <TableBody>
-                {collections?.map((item) => (
-                    <TableRow key={item._id} onClick={() => setSelectedItem({ collectionName, id: item._id })}>
-                        {schema[collectionName].fields.map((field) => (
-                            <TableCell key={field.name}>
-                                {renderTableCell(item[field.name], schema[collectionName].fields.find((f) => f.name === field.name))}
-                            </TableCell>
-                        ))}
-                    </TableRow>
-                ))}
-            </TableBody>
-        </Table>
+    const deleteItem = useMutation(api.collections.remove);
+    const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
-    )
+    const handleDelete = async () => {
+        if (itemToDelete) {
+            await deleteItem({ collectionName, id: itemToDelete });
+            setItemToDelete(null);
+        }
+    };
+
+    return (
+        <>
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        {schema[collectionName].fields.map((field) => (
+                            <TableHead key={field.name}>{field.name}</TableHead>
+                        ))}
+                        <TableHead>Actions</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {collections?.map((item) => (
+                        <TableRow key={item._id}>
+                            {schema[collectionName].fields.map((field) => (
+                                <TableCell
+                                    key={field.name}
+                                    onClick={() => setSelectedItem({ collectionName, id: item._id })}
+                                >
+                                    {renderTableCell(item[field.name], schema[collectionName].fields.find((f) => f.name === field.name))}
+                                </TableCell>
+                            ))}
+                            <TableCell>
+                                <AlertDialog open={itemToDelete === item._id} onOpenChange={(open) => !open && setItemToDelete(null)}>
+                                    <AlertDialogTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setItemToDelete(item._id);
+                                            }}
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                This action cannot be undone. This will permanently delete this record.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+        </>
+    );
 }
 
 function renderTableCell(value: any, fieldSchema: Field | undefined) {
     switch (fieldSchema?.type) {
-        case "string":
-            return fieldSchema.richText ? "Rich Text" : value;
-        case "boolean":
-            return value ? "Yes" : "No";
-        case "date":
-            return new Date(value).toLocaleDateString();
-        case "int64":
-            return value.toString();
-        default:
+        case PlainText:
             return value;
+        case RichText:
+            return "...";
+        case BooleanField:
+            return value ? "Yes" : "No";
+        case DateField:
+            return new Date(value).toLocaleDateString();
+        case Int64Field:
+            return value.toString();
+        case undefined:
+            return "Unknown field type"
+        default:
+            let _exhaustiveCheck: never = fieldSchema;
+            throw new Error("Unreachable");
     }
 }

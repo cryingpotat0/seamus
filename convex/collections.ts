@@ -40,3 +40,13 @@ export const add = mutation({
         return await ctx.db.insert(args.collectionName, args.item);
     }
 });
+
+export const remove = mutation({
+    args: {
+        collectionName: v.string(),
+        id: v.any(),
+    },
+    handler: async (ctx, args) => {
+        await ctx.db.delete(args.id);
+    },
+});

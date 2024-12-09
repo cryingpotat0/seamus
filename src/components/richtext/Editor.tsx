@@ -7,7 +7,6 @@
  */
 
 import { AutoFocusPlugin } from '@lexical/react/LexicalAutoFocusPlugin';
-import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin';
 import { CharacterLimitPlugin } from '@lexical/react/LexicalCharacterLimitPlugin';
 import { CheckListPlugin } from '@lexical/react/LexicalCheckListPlugin';
 import { ClearEditorPlugin } from '@lexical/react/LexicalClearEditorPlugin';
@@ -18,7 +17,6 @@ import { HashtagPlugin } from '@lexical/react/LexicalHashtagPlugin';
 import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin';
 import { HorizontalRulePlugin } from '@lexical/react/LexicalHorizontalRulePlugin';
 import { ListPlugin } from '@lexical/react/LexicalListPlugin';
-import { PlainTextPlugin } from '@lexical/react/LexicalPlainTextPlugin';
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin';
 import { SelectionAlwaysOnDisplay } from '@lexical/react/LexicalSelectionAlwaysOnDisplay';
 import { TabIndentationPlugin } from '@lexical/react/LexicalTabIndentationPlugin';
@@ -69,22 +67,13 @@ import TreeViewPlugin from './plugins/TreeViewPlugin';
 import TwitterPlugin from './plugins/TwitterPlugin';
 import YouTubePlugin from './plugins/YouTubePlugin';
 import ContentEditable from './ui/ContentEditable';
-import { EditorState } from 'lexical';
 
 const CAN_USE_DOM: boolean =
     typeof window !== 'undefined' &&
     typeof window.document !== 'undefined' &&
     typeof window.document.createElement !== 'undefined';
 
-export default function Editor({
-    stateRef,
-
-}: {
-    stateRef?: {
-        ref: React.MutableRefObject<any>;
-        fieldName: string;
-    }
-}): JSX.Element {
+export default function Editor(): JSX.Element {
     const { historyState } = useSharedHistoryContext();
     const {
         settings: {
@@ -150,13 +139,6 @@ export default function Editor({
             <ShortcutsPlugin
                 editor={activeEditor}
                 setIsLinkEditMode={setIsLinkEditMode}
-            />
-            <OnChangePlugin
-                onChange={(editorState) => {
-                    if (stateRef?.ref.current) {
-                        stateRef.ref.current[stateRef.fieldName] = JSON.stringify(editorState);
-                    }
-                }}
             />
             <div
                 className={`editor-container ${showTreeView ? 'tree-view' : ''}`}>

@@ -30,6 +30,9 @@ import { parseAllowedFontSize } from './plugins/ToolbarPlugin/fontSize';
 import PlaygroundEditorTheme from './themes/PlaygroundEditorTheme';
 import { parseAllowedColor } from './ui/ColorPicker';
 import './index.css';
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
+import React, { useEffect } from 'react';
+import { $generateHtmlFromNodes } from '@lexical/html';
 
 console.warn(
     'If you are profiling the playground app, please ensure you turn off the debug view. You can disable it by pressing on the settings control in the bottom-left of your screen and toggling the debug view setting.',
@@ -180,15 +183,36 @@ function buildImportMap(): DOMConversionMap {
     return importMap;
 }
 
+const EditorCapturePlugin = (({ stateRef, htmlRef }: { stateRef: any, htmlRef: any }) => {
+    const [editor] = useLexicalComposerContext();
+    useEffect(() => {
+        const removeUpdateListener = editor.registerUpdateListener(
+            ({ editorState }) => {
+                stateRef.current = editorState;
+                editorState.read(() => {
+                    const htmlString = $generateHtmlFromNodes(editor, null);
+                    htmlRef.current = htmlString;
+                    // Do something.
+                });
+            }
+        );
+        return () => {
+            removeUpdateListener();
+        };
+    }, [editor]);
+
+    return null;
+});
+
 export default function App({
     initialEditorState,
-    stateRef,
+    editorRef,
 }: {
     initialEditorState?: string;
-    stateRef?: {
-        ref: React.MutableRefObject<any>;
-        fieldName: string;
-    }
+    editorRef?: {
+        lexicalJson: React.MutableRefObject<any>,
+        html: React.MutableRefObject<any>
+    };
 }): JSX.Element {
 
     const initialConfig = {
@@ -209,8 +233,9 @@ export default function App({
                     <TableContext>
                         <ToolbarContext>
                             <div className="editor-shell border border-black">
-                                <Editor stateRef={stateRef} />
+                                <Editor />
                             </div>
+                            <EditorCapturePlugin stateRef={editorRef?.lexicalJson} htmlRef={editorRef?.html} />
                         </ToolbarContext>
                     </TableContext>
                 </SharedHistoryContext>

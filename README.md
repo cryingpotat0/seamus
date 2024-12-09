@@ -1,50 +1,40 @@
-# React + TypeScript + Vite
+# Seamus
+Seamus (like CeeEmUss) is a CMS for my blog built on top of Convex. The goal of Seamus is to provide the best possible rich text editing experience that translates to my simple Astro blog. The Lexical playground is the closest to perfect rich text editing experience I found, so most of this project is integrating that with a general schema definition toolkit and the Convex APIs.
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-Currently, two official plugins are available:
+### TODOs
+1. First goal is to get this integrated e2e with the blog. This involves a few things to add:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Improve the way that editorState for rich text is persisted
+    - Ideally this will - on save - send a "request" to all the rich text entries to get their JSON. Then use this to save.
+- Ability to delete post
+- Proper date picker
+- Test integration with Astro blog
+- Jupyter Renderer integration
+- Cannon integration
+- Add support for tags from a fixed list defined 
+- Add support for imagepicker with media uploads to convex
+- Clean up UI
+    - Improve margin on top
+    - Make edit a modal that pops up
+    - Make UI inline in some cases
+- Move everything from blog.cryingpotato.com
+    - Move existing MD articles from my current payload CMS instance (also uses Lexical, so should be easy).
+    - Move MDX articles
+    - Move logs
+    - Move showcase
+    - Move ideas
 
-## Expanding the ESLint configuration
+2. Now can come other things like:
+- Pagination
+- Live preview
+- Autosave
+- Add validation to schemas with validation funcs
+- Add relationships and create a tags table as another collection
+- Improve convex types for CRUD ops
+- Add defaults for things like dates
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+3. Make it general
+- Allow to connect to a random github etc.
+- Collab editing
 
-- Configure the top-level `parserOptions` property like this:
-
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
-
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
-
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
-
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
-```

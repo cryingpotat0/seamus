@@ -1,35 +1,30 @@
 import { v, VBoolean, VInt64, VString } from "convex/values";
 import { defineSchema, defineTable } from "convex/server";
-import { Type, type Static } from "@sinclair/typebox"
 
 // Primitive types for the first level of schema - this is what the user will
 // define the schema in.
-type StringField = "string"
-const StringField = "string"
+export type PlainText = "plainText"
+export const PlainText: PlainText = "plainText"
 
-type DateField = "date"
-const DateField = "date"
+export type RichText = "richText"
+export const RichText: RichText = "richText"
 
-type Int64Field = "int64"
-const Int64Field = "int64"
+export type DateField = "date"
+export const DateField: DateField = "date"
 
-type BooleanField = "boolean"
-const BooleanField = "boolean"
+export type Int64Field = "int64"
+export const Int64Field = "int64"
+
+export type BooleanField = "boolean"
+export const BooleanField = "boolean"
 
 type CommonFieldOptions = {
-    name: string
+    name: string;
 }
 
-export type Field = CommonFieldOptions & ({
-    type: StringField
-    richText?: boolean
-} | {
-    type: Int64Field
-} | {
-    type: BooleanField
-} | {
-    type: DateField
-})
+export type Field = CommonFieldOptions & {
+    type: PlainText | RichText | DateField | Int64Field | BooleanField
+}
 
 
 type CollectionSchema = {
@@ -44,15 +39,15 @@ const postSchema: CollectionSchema = {
     fields: [
         {
             name: "title",
-            type: StringField,
+            type: PlainText,
         },
         {
             name: "slug",
-            type: StringField,
+            type: PlainText,
         },
         {
             name: "description",
-            type: StringField,
+            type: PlainText,
         },
         {
             name: "technical",
@@ -72,8 +67,7 @@ const postSchema: CollectionSchema = {
         },
         {
             name: "content",
-            type: StringField,
-            richText: true,
+            type: RichText,
         },
     ]
 };
@@ -82,11 +76,11 @@ const logSchema: CollectionSchema = {
     fields: [
         {
             name: "title",
-            type: StringField,
+            type: PlainText,
         },
         {
             name: "slug",
-            type: StringField,
+            type: PlainText,
         },
         {
             name: "pubDate",
@@ -94,8 +88,7 @@ const logSchema: CollectionSchema = {
         },
         {
             name: "content",
-            type: StringField,
-            richText: true,
+            type: RichText,
         },
     ]
 }
@@ -107,17 +100,22 @@ export const schema: Schema = {
 
 // Convex utils.
 
-function toConvexField(field: Field): VString | VBoolean | VInt64 {
+function toConvexField(field: Field): any {
     switch (field.type) {
-        case "string":
+        case "plainText":
         case "date":
             return v.string()
+        case "richText":
+            return v.object({
+                lexicalJson: v.string(),
+                html: v.string(),
+            })
         case "boolean":
             return v.boolean()
         case "int64":
             return v.int64()
         default:
-            let _: never = field
+            // let _: never = field
             throw new Error("Unsupported type")
     }
 }
