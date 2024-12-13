@@ -1,4 +1,5 @@
 import type {
+    DOMExportOutput,
     EditorConfig,
     ElementFormatType,
     LexicalEditor,
@@ -12,7 +13,6 @@ import {
     DecoratorBlockNode,
     SerializedDecoratorBlockNode,
 } from '@lexical/react/LexicalDecoratorBlockNode';
-import { useEffect, useState } from 'react';
 
 type JupyterHtmlComponentProps = Readonly<{
     className: Readonly<{
@@ -21,45 +21,17 @@ type JupyterHtmlComponentProps = Readonly<{
     }>;
     format: ElementFormatType | null;
     nodeKey: NodeKey;
-    cellId: string;
-    url: string;
+    htmlContent: string;
 }>;
 
-export type JupyterHtmlNodeArgs = { url: string; cellId: string };
+export type JupyterHtmlNodeArgs = { url: string; cellId: string; htmlContent: string };
 
 function JupyterHtmlComponent({
     className,
     format,
     nodeKey,
-    url,
-    cellId,
+    htmlContent,
 }: JupyterHtmlComponentProps) {
-
-
-
-    console.log('Jupyter render', cellId, url, import.meta.env.VITE_DEPLOYMENT_NAME);
-    const [html, setHtml] = useState('<div>Loading...</div>');
-    useEffect(() => {
-        (async () => {
-            try {
-                const res = await fetch(`https://${import.meta.env.VITE_DEPLOYMENT_NAME}.convex.site/get-jupyter-html-content`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        cellId,
-                        url,
-                    }),
-                })
-                const data = await res.json();
-                const parsed = data.html;
-                setHtml(parsed);
-            } catch (e) {
-                console.error(e);
-            }
-        })();
-    }, [cellId, url]);
 
     return (
         <BlockWithAlignableContents
@@ -69,7 +41,7 @@ function JupyterHtmlComponent({
             <iframe
                 width="100%"
                 height="315"
-                srcDoc={html}
+                srcDoc={htmlContent}
                 allowFullScreen={true}
             />
         </BlockWithAlignableContents>
@@ -79,7 +51,8 @@ function JupyterHtmlComponent({
 export type SerializedJupyterHtmlNode = Spread<
     {
         url: string;
-        cellId: string
+        cellId: string;
+        htmlContent: string;
     },
     SerializedDecoratorBlockNode
 >;
@@ -87,6 +60,7 @@ export type SerializedJupyterHtmlNode = Spread<
 export class JupyterHtmlNode extends DecoratorBlockNode {
     __url: string
     __cellId: string;
+    __htmlContent: string;
 
     static getType(): string {
         return 'jupyter_html';
@@ -96,6 +70,7 @@ export class JupyterHtmlNode extends DecoratorBlockNode {
         return new JupyterHtmlNode({
             cellId: node.__cellId,
             url: node.__url,
+            htmlContent: node.__htmlContent,
         }, node.__format, node.__key);
     }
 
@@ -110,6 +85,7 @@ export class JupyterHtmlNode extends DecoratorBlockNode {
             ...super.exportJSON(),
             cellId: this.__cellId,
             url: this.__url,
+            htmlContent: this.__htmlContent,
             type: 'jupyter_html',
             version: 1,
         };
@@ -119,6 +95,16 @@ export class JupyterHtmlNode extends DecoratorBlockNode {
         super(format, key);
         this.__cellId = args.cellId;
         this.__url = args.url;
+        this.__htmlContent = args.htmlContent;
+    }
+
+    exportDOM(): DOMExportOutput {
+        const element = document.createElement('iframe');
+        element.width = '100%';
+        element.height = '315';
+        element.srcdoc = this.__htmlContent;
+        element.classList.add('JupyterHtml');
+        return { element };
     }
 
     updateDOM(): false {
@@ -147,8 +133,7 @@ export class JupyterHtmlNode extends DecoratorBlockNode {
                 className={className}
                 format={this.__format}
                 nodeKey={this.getKey()}
-                url={this.__url}
-                cellId={this.__cellId}
+                htmlContent={this.__htmlContent}
             />
         );
     }

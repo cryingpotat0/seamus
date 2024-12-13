@@ -1,65 +1,74 @@
-import { httpRouter } from "convex/server";
+import { httpRouter, RoutableMethod } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { parse } from 'node-html-parser';
 
 const http = httpRouter();
 
-http.route({
-    path: "/get-jupyter-html-content",
-    method: "POST",
-    handler: httpAction(async (_ctx, request) => {
-        const { cellId, url } = await request.json();
+const proxyAction = httpAction(async (_ctx, request) => {
+    // /proxy/:targetUrl - target url is a path param, parse from request.url
+    const urlPrefixLength = "/proxy/".length;
+    const targetUrl = new URL(request.url).pathname.slice(urlPrefixLength);
 
-        const htmlContentResponse = await fetch(url);
-        const htmlContent = parse(await htmlContentResponse.text());
+    console.log("targetUrl", targetUrl)
+    if (!targetUrl) {
+        return new Response("Missing target URL", { status: 400 });
+    }
 
-        if (cellId?.length) {
-            const cells = htmlContent.querySelectorAll('[id^="cell-id="]');
-            const parent = cells[0].parentNode;
-            const cellIdAsArr = (Array.isArray(cellId) ? cellId : [cellId]).map((id) => `cell-id=${id}`);
-            for (const cell of cells) {
-                // If the cell id exists in cellIdAsArr, do not remove it
-                if (!cellIdAsArr.includes(cell.id)) {
-                    parent.removeChild(cell);
-                }
-            }
+    const headers = new Headers();
+    request.headers.forEach((value, key) => {
+        if (key !== "host") {
+            headers.set(key, value);
         }
+    });
 
-        return new Response(JSON.stringify({
-            html: htmlContent.toString(),
-        }), {
-            status: 200,
-            headers: new Headers({
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*", // TODO: tighten origins
-                "Vary": "origin",
-            }),
-        });
-    }),
+
+
+    const res = await fetch(targetUrl, {
+        method: request.method,
+        body: request.body,
+        // headers: request.headers, // TODO: this doesn't work?
+    });
+
+    res.headers.set("Access-Control-Allow-Origin", "*");
+    res.headers.set("Access-Control-Allow-Headers", request.headers.get("Access-Control-Request-Headers") || "*");
+    res.headers.set("Access-Control-Allow-Methods", request.method);
+
+    return res
 });
 
+// TODO: add proxy for GET etc.
+for (const method of ["GET", "POST", "PUT", "DELETE"]) {
+    http.route({
+        pathPrefix: "/proxy/",
+        method: method as RoutableMethod,
+        handler: proxyAction
+    });
+}
+
 http.route({
-    path: "/get-jupyter-html-content",
+    pathPrefix: "/proxy/",
     method: "OPTIONS",
     handler: httpAction(async (_ctx, request) => {
         const headers = request.headers;
-        if (
-            headers.get("Origin") !== null &&
-            headers.get("Access-Control-Request-Method") !== null &&
-            headers.get("Access-Control-Request-Headers") !== null
-        ) {
-            return new Response(null, {
-                headers: new Headers({
-                    // e.g. https://mywebsite.com, configured on your Convex dashboard
-                    "Access-Control-Allow-Origin": "*",
-                    "Access-Control-Allow-Methods": "POST",
-                    "Access-Control-Allow-Headers": "Content-Type, Digest",
-                    "Access-Control-Max-Age": "86400",
-                }),
-            });
-        } else {
-            return new Response();
-        }
+        // if (
+        //     headers.get("Origin") !== null &&
+        //     headers.get("Access-Control-Request-Method") !== null &&
+        //     headers.get("Access-Control-Request-Headers") !== null
+        // ) {
+        console.log("AAAA OPTIONS request", headers.get("Origin"));
+        console.log("OPTIONS request", headers.get("Origin"));
+        return new Response(null, {
+            headers: new Headers({
+                // e.g. https://mywebsite.com, configured on your Convex dashboard
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE",
+                "Access-Control-Allow-Headers": "*",
+                "Access-Control-Max-Age": "86400",
+            }),
+        });
+        // } else {
+        //     return new Response();
+        // }
     }),
 });
 
