@@ -13,6 +13,7 @@ Seamus (like CeeEmUss) is a CMS for my blog built on top of Convex. The goal of 
 - Jupyter Renderer integration
 - Cannon integration
 - Add support for tags from a fixed list defined 
+- Add media integration
 - Add support for imagepicker with media uploads to convex
 - Clean up UI
     - Improve margin on top

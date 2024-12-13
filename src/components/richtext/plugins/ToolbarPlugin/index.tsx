@@ -1000,17 +1000,6 @@ export default function ToolbarPlugin({
                                 </DropDownItem>
                                 <DropDownItem
                                     onClick={() => {
-                                        activeEditor.dispatchCommand(
-                                            INSERT_EXCALIDRAW_COMMAND,
-                                            undefined,
-                                        );
-                                    }}
-                                    className="item">
-                                    <i className="icon diagram-2" />
-                                    <span className="text">Excalidraw</span>
-                                </DropDownItem>
-                                <DropDownItem
-                                    onClick={() => {
                                         showModal('Insert Table', (onClose) => (
                                             <InsertTableDialog
                                                 activeEditor={activeEditor}

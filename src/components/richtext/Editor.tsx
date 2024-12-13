@@ -67,6 +67,7 @@ import TreeViewPlugin from './plugins/TreeViewPlugin';
 import TwitterPlugin from './plugins/TwitterPlugin';
 import YouTubePlugin from './plugins/YouTubePlugin';
 import ContentEditable from './ui/ContentEditable';
+import JupyterHtmlPlugin from './plugins/JupyterHtmlPlugin';
 
 const CAN_USE_DOM: boolean =
     typeof window !== 'undefined' &&
@@ -187,6 +188,7 @@ export default function Editor(): JSX.Element {
                     <TwitterPlugin />
                     <YouTubePlugin />
                     <FigmaPlugin />
+                    <JupyterHtmlPlugin />
                     <ClickableLinkPlugin disabled={isEditable} />
                     <HorizontalRulePlugin />
                     <EquationsPlugin />
