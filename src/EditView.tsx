@@ -112,6 +112,12 @@ export function EditView({
                                 onChange={(e) => handleChange(field, parseInt(e.target.value, 10))}
                             />
                         )}
+                        {field.type === "stringarray" && (
+                            <Input
+                                value={editedItem[field.name].join(',')}
+                                onChange={(e) => handleChange(field, e.target.value.split(','))}
+                            />
+                        )}
                     </div>
                 ))}
                 <Button onClick={handleSave}>Save</Button>

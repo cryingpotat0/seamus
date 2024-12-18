@@ -37,7 +37,10 @@ export const add = mutation({
         item: v.any(),
     },
     handler: async (ctx, args) => {
-        return await ctx.db.insert(args.collectionName, args.item);
+        return await ctx.db.insert(args.collectionName, {
+            ...args.item,
+            valid: true, // TODO: add validation
+        });
     }
 });
 
@@ -48,5 +51,23 @@ export const remove = mutation({
     },
     handler: async (ctx, args) => {
         await ctx.db.delete(args.id);
+    },
+});
+
+export const saveMany = mutation({
+    args: {
+        collectionName: v.string(),
+        items: v.array(v.any()),
+    },
+    handler: async (ctx, args) => {
+        // Insert all items in parallel
+        await Promise.all(
+            args.items.map(item =>
+                ctx.db.insert(args.collectionName, {
+                    ...item,
+                    valid: true, // TODO: add validation
+                })
+            )
+        );
     },
 });

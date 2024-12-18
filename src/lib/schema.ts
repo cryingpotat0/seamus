@@ -1,4 +1,4 @@
-import { v, VBoolean, VInt64, VString } from "convex/values";
+import { v } from "convex/values";
 import { defineSchema, defineTable } from "convex/server";
 
 // Primitive types for the first level of schema - this is what the user will
@@ -18,12 +18,15 @@ export const Int64Field = "int64"
 export type BooleanField = "boolean"
 export const BooleanField = "boolean"
 
+export type StringArrayField = "stringarray"
+export const StringArrayField: StringArrayField = "stringarray"
+
 type CommonFieldOptions = {
     name: string;
 }
 
 export type Field = CommonFieldOptions & {
-    type: PlainText | RichText | DateField | Int64Field | BooleanField
+    type: PlainText | RichText | DateField | Int64Field | BooleanField | StringArrayField
 }
 
 
@@ -79,6 +82,10 @@ const logSchema: CollectionSchema = {
             type: PlainText,
         },
         {
+            name: "description",
+            type: PlainText,
+        },
+        {
             name: "slug",
             type: PlainText,
         },
@@ -89,6 +96,10 @@ const logSchema: CollectionSchema = {
         {
             name: "content",
             type: RichText,
+        },
+        {
+            name: "tags",
+            type: StringArrayField,
         },
     ]
 }
@@ -114,6 +125,8 @@ function toConvexField(field: Field): any {
             return v.boolean()
         case "int64":
             return v.int64()
+        case StringArrayField:
+            return v.array(v.string())
         default:
             // let _: never = field
             throw new Error("Unsupported type")
@@ -125,7 +138,7 @@ function toConvexSchema(schema: Schema): any {
     const schemaConvex: any = {};
     for (const [collection, collectionSchema] of Object.entries(schema)) {
         const collectionSchemaConvex: Record<string, any> = {
-            _valid: v.boolean(), // Indicates whether the current row is valid.
+            valid: v.boolean(),
         };
         for (const field of collectionSchema.fields) {
             // Everything is optional, there will be a separate "_valid" check.

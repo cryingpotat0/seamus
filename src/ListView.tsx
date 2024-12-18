@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { EditView } from "./EditView";
-import { BooleanField, DateField, Field, Int64Field, PlainText, RichText, schema } from "./lib/schema";
+import { BooleanField, DateField, Field, Int64Field, PlainText, RichText, schema, StringArrayField } from "./lib/schema";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -25,6 +25,7 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Trash2 } from "lucide-react";
+import { MigrationView } from "./MigrationView";
 
 const defaultCollection = Object.keys(schema)[0];
 
@@ -34,6 +35,7 @@ export function ListView() {
         id: string;
     } | null>(null);
     const addItem = useMutation(api.collections.add);
+    const [showMigration, setShowMigration] = useState(false);
 
     const handleAddNew = async (collectionName: string) => {
         const newItemId = await addItem({ collectionName, item: {} });
@@ -54,9 +56,18 @@ export function ListView() {
                     <TabsContent key={collectionName} value={collectionName}>
                         <div className="flex justify-between mb-4">
                             <h2 className="text-2xl">{collectionName}</h2>
-                            <Button onClick={() => handleAddNew(collectionName)}>Add New</Button>
+                            <div className="flex gap-2">
+                                <Button onClick={() => setShowMigration(true)}>Import</Button>
+                                <Button onClick={() => handleAddNew(collectionName)}>Add New</Button>
+                            </div>
                         </div>
                         <CollectionTable collectionName={collectionName} setSelectedItem={setSelectedItem} />
+                        {showMigration && (
+                            <MigrationView
+                                collection={collectionName}
+                                onClose={() => setShowMigration(false)}
+                            />
+                        )}
                     </TabsContent>
                 ))}
             </Tabs>
@@ -161,6 +172,8 @@ function renderTableCell(value: any, fieldSchema: Field | undefined) {
             return new Date(value).toLocaleDateString();
         case Int64Field:
             return value.toString();
+        case StringArrayField:
+            return value?.join(", ");
         case undefined:
             return "Unknown field type"
         default:
