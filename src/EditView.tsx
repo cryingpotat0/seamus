@@ -11,16 +11,16 @@ import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescript
 import { $generateHtmlFromNodes } from "@lexical/html";
 
 export function EditView({
-    collection,
+    collectionName,
     itemId,
     onClose
 }:
     {
-        collection: string;
+        collectionName: string;
         itemId: string,
         onClose: () => void
     }) {
-    const item = useQuery(api.collections.get, { collectionName: collection, id: itemId });
+    const item = useQuery(api.collections.get, { collectionName, id: itemId });
     const [editedItem, setEditedItem] = useState(item);
     const [error, setError] = useState<Error | null>(null);
 
@@ -30,7 +30,8 @@ export function EditView({
             html: React.MutableRefObject<any>
         }
     } = {};
-    for (const field of schema[collection].fields) {
+    const collection = schema.collections[collectionName];
+    for (const field of collection.fields) {
         if (field.type === RichText) {
             richTextEditorRefs[field.name] = {
                 lexicalJson: useRef(),
@@ -41,6 +42,7 @@ export function EditView({
 
 
     const saveItem = useMutation(api.collections.save);
+    const generateUploadUrl = useMutation(api.collections.generateUploadUrl);
 
     useEffect(() => {
         setEditedItem(item);
@@ -52,6 +54,7 @@ export function EditView({
 
     const handleSave = async () => {
         try {
+            // TODO: do this on a copy of editedItem? Or take the state in etc. this is kinda hacky rn.
             for (const [fieldName, richFieldDataRefs] of Object.entries(richTextEditorRefs)) {
                 const richFieldData = {
                     lexicalJson: JSON.stringify(richFieldDataRefs.lexicalJson.current),
@@ -61,7 +64,23 @@ export function EditView({
                 editedItem[fieldName] = richFieldData
             }
 
-            await saveItem({ collectionName: collection, item: editedItem });
+            for (const field of collection.fields) {
+                if (field.type === "media") {
+                    const file = editedItem[field.name][0];
+                    const mediaUrl = await generateUploadUrl();
+                    const result = await fetch(mediaUrl, {
+                        method: 'POST',
+                        headers: {
+                            "Content-Type": file.type,
+                        },
+                        body: file,
+                    });
+                    const { storageId } = await result.json();
+                    editedItem[field.name] = { mediaUrl: storageId, mediaType: file.type };
+                }
+            }
+
+            await saveItem({ collectionName, item: editedItem });
             onClose();
         } catch (e) {
             console.error(e);
@@ -76,8 +95,8 @@ export function EditView({
     return (
         <>
             <div className="p-4 border rounded-lg">
-                <h2 className="text-2xl mb-4">Edit {collection} Item</h2>
-                {schema[collection].fields.map((field) => (
+                <h2 className="text-2xl mb-4">Edit {collectionName} Item</h2>
+                {collection.fields.map((field) => (
                     <div key={field.name} className="mb-4">
                         <label className="block text-sm font-medium text-gray-700">{field.name}</label>
                         {field.type === PlainText && (
@@ -118,6 +137,13 @@ export function EditView({
                                 onChange={(e) => handleChange(field, e.target.value.split(','))}
                             />
                         )}
+                        {field.type === "media" && (
+                            <Input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => handleChange(field, e.target.files)}
+                            />
+                        )}
                     </div>
                 ))}
                 <Button onClick={handleSave}>Save</Button>
@@ -127,7 +153,7 @@ export function EditView({
             <AlertDialog open={error !== null} onOpenChange={() => setError(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Error Saving {collection}</AlertDialogTitle>
+                        <AlertDialogTitle>Error Saving {collectionName}</AlertDialogTitle>
                         <AlertDialogDescription>
                             {error?.message || 'An unknown error occurred while saving.'}
                         </AlertDialogDescription>

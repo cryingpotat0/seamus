@@ -21,21 +21,26 @@ export const BooleanField = "boolean"
 export type StringArrayField = "stringarray"
 export const StringArrayField: StringArrayField = "stringarray"
 
+export type MediaField = "media"
+export const MediaField: MediaField = "media"
+
 type CommonFieldOptions = {
     name: string;
 }
 
 export type Field = CommonFieldOptions & {
-    type: PlainText | RichText | DateField | Int64Field | BooleanField | StringArrayField
+    type: PlainText | RichText | DateField | Int64Field | BooleanField | StringArrayField | MediaField;
 }
 
 
 type CollectionSchema = {
-    fields: Array<Field>
+    fields: Array<Field>;
+    mediaProvider?: string;
 }
 
 type Schema = {
-    [collectionName: string]: CollectionSchema
+    collections: { [collectionName: string]: CollectionSchema };
+    mediaProviderCollection: string;
 }
 
 const postSchema: CollectionSchema = {
@@ -104,9 +109,26 @@ const logSchema: CollectionSchema = {
     ]
 }
 
+const mediaSchema: CollectionSchema = {
+    fields: [
+        {
+            name: "description",
+            type: PlainText,
+        },
+        {
+            name: "media",
+            type: MediaField,
+        },
+    ]
+}
+
 export const schema: Schema = {
-    posts: postSchema,
-    logs: logSchema
+    collections: {
+        posts: postSchema,
+        logs: logSchema,
+        media: mediaSchema,
+    },
+    mediaProviderCollection: "media"
 };
 
 // Convex utils.
@@ -127,16 +149,32 @@ function toConvexField(field: Field): any {
             return v.int64()
         case StringArrayField:
             return v.array(v.string())
+        case MediaField:
+            return v.object({
+                mediaUrl: v.string(),
+                mediaType: v.string(),
+            })
         default:
             // let _: never = field
             throw new Error("Unsupported type")
     }
 }
 
+function isMediaCollection(collection: CollectionSchema | undefined): boolean {
+    return Boolean(collection?.fields.filter(f => f.type === MediaField)?.length === 1);
+}
+
 // TODO: types.
 function toConvexSchema(schema: Schema): any {
     const schemaConvex: any = {};
-    for (const [collection, collectionSchema] of Object.entries(schema)) {
+
+    // Ensure that the default media provider exists.
+    if (!isMediaCollection(schema.collections[schema.mediaProviderCollection])) {
+        throw new Error("Media provider collection must exist in the schema");
+    }
+    console.log(`Found media provider collection: ${schema.mediaProviderCollection}`);
+
+    for (const [collection, collectionSchema] of Object.entries(schema.collections)) {
         const collectionSchemaConvex: Record<string, any> = {
             valid: v.boolean(),
         };

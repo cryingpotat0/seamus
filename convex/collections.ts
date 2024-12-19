@@ -71,3 +71,17 @@ export const saveMany = mutation({
         );
     },
 });
+
+export const generateUploadUrl = mutation(async (ctx) => {
+    return await ctx.storage.generateUploadUrl();
+});
+
+export const generateDownloadUrl = query({
+    args: {
+        storageId: v.string(),
+    },
+    handler: async (ctx, args) => {
+        // TODO: handle deprecation warning for storage.
+        return await ctx.storage.getUrl(args.storageId);
+    }
+})

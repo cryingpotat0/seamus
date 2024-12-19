@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { EditView } from "./EditView";
-import { BooleanField, DateField, Field, Int64Field, PlainText, RichText, schema, StringArrayField } from "./lib/schema";
+import { BooleanField, DateField, Field, Int64Field, MediaField, PlainText, RichText, schema, StringArrayField } from "./lib/schema";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -46,13 +46,13 @@ export function ListView() {
         <div>
             <Tabs defaultValue={defaultCollection}>
                 <TabsList>
-                    {Object.keys(schema).map((collectionName) => (
+                    {Object.keys(schema.collections).map((collectionName) => (
                         <TabsTrigger key={collectionName} value={collectionName}>
                             {collectionName}
                         </TabsTrigger>
                     ))}
                 </TabsList>
-                {Object.keys(schema).map((collectionName) => (
+                {Object.keys(schema.collections).map((collectionName) => (
                     <TabsContent key={collectionName} value={collectionName}>
                         <div className="flex justify-between mb-4">
                             <h2 className="text-2xl">{collectionName}</h2>
@@ -73,7 +73,7 @@ export function ListView() {
             </Tabs>
             {selectedItem && (
                 <EditView
-                    collection={selectedItem.collectionName}
+                    collectionName={selectedItem.collectionName}
                     itemId={selectedItem.id}
                     onClose={() => setSelectedItem(null)}
                 />
@@ -102,12 +102,14 @@ function CollectionTable({
         }
     };
 
+    const collection = schema.collections[collectionName];
+
     return (
         <>
             <Table>
                 <TableHeader>
                     <TableRow>
-                        {schema[collectionName].fields.map((field) => (
+                        {collection?.fields.map((field) => (
                             <TableHead key={field.name}>{field.name}</TableHead>
                         ))}
                         <TableHead>Actions</TableHead>
@@ -116,12 +118,12 @@ function CollectionTable({
                 <TableBody>
                     {collections?.map((item) => (
                         <TableRow key={item._id}>
-                            {schema[collectionName].fields.map((field) => (
+                            {collection.fields.map((field) => (
                                 <TableCell
                                     key={field.name}
                                     onClick={() => setSelectedItem({ collectionName, id: item._id })}
                                 >
-                                    {renderTableCell(item[field.name], schema[collectionName].fields.find((f) => f.name === field.name))}
+                                    {renderTableCell(item[field.name], collection.fields.find((f) => f.name === field.name))}
                                 </TableCell>
                             ))}
                             <TableCell>
@@ -165,7 +167,7 @@ function renderTableCell(value: any, fieldSchema: Field | undefined) {
         case PlainText:
             return value;
         case RichText:
-            return "...";
+            return "Rich text";
         case BooleanField:
             return value ? "Yes" : "No";
         case DateField:
@@ -174,6 +176,8 @@ function renderTableCell(value: any, fieldSchema: Field | undefined) {
             return value.toString();
         case StringArrayField:
             return value?.join(", ");
+        case MediaField:
+            return "<media>";
         case undefined:
             return "Unknown field type"
         default:

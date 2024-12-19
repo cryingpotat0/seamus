@@ -10,10 +10,10 @@ Seamus (like CeeEmUss) is a CMS for my blog built on top of Convex. The goal of 
 - :check: Ability to delete post
 - :check: Proper date picker
 - :check: Test integration with Astro blog
-- Jupyter Renderer integration
+- :check: Jupyter Renderer integration
     - The serialized contents should just be the data at the cell
 - Cannon integration
-- Add support for tags from a fixed list defined 
+- Add support for tags from a fixed list defined --- just did a stringarray
 - Add media integration
 - Add support for imagepicker with media uploads to convex
 - Clean up UI
@@ -28,6 +28,7 @@ Seamus (like CeeEmUss) is a CMS for my blog built on top of Convex. The goal of 
     - Move ideas
 
 2. Now can come other things like:
+- Autodeploy URL
 - Pagination
 - Live preview
 - Autosave
