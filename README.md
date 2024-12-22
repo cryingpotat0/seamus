@@ -26,7 +26,7 @@ Seamus (like CeeEmUss) is a CMS for my blog built on top of Convex. The goal of 
     - Move existing MD articles from my current payload CMS instance (also uses Lexical, so should be easy).
     - Move MDX articles
     - :check: Move logs
-    - Move showcase
+    - :check: Move showcase
     - Move ideas
 - Clean up UI
     - Improve margin on top
