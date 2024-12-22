@@ -99,7 +99,7 @@ export function InsertImageUploadedDialogBody({
         async (files: FileList | null) => {
             if (!files?.length) return;
             const file = files[0];
-            
+
             setIsUploading(true);
             try {
                 const { storageId } = await uploadMedia(file);
@@ -121,7 +121,7 @@ export function InsertImageUploadedDialogBody({
     const handleFilePreview = useCallback((files: FileList | null) => {
         if (!files?.length) return;
         const file = files[0];
-        
+
         const reader = new FileReader();
         reader.onload = () => {
             if (typeof reader.result === 'string') {
@@ -134,7 +134,6 @@ export function InsertImageUploadedDialogBody({
         reader.readAsDataURL(file);
     }, [altText]);
 
-    console.log('image',src, altText);
 
     return (
         <>
@@ -156,7 +155,7 @@ export function InsertImageUploadedDialogBody({
             />
             {src && (
                 <div className="preview-image">
-                    <img src={src} alt={altText} style={{maxWidth: '200px'}} />
+                    <img src={src} alt={altText} style={{ maxWidth: '200px' }} />
                 </div>
             )}
             {isUploading && (
@@ -222,7 +221,7 @@ export default function ImagesPlugin({
     captionsEnabled?: boolean;
 }): JSX.Element | null {
     const [editor] = useLexicalComposerContext();
-  
+
     useEffect(() => {
         if (!editor.hasNodes([ImageNode])) {
             throw new Error('ImagesPlugin: ImageNode not registered on editor');

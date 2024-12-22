@@ -15,22 +15,24 @@ Seamus (like CeeEmUss) is a CMS for my blog built on top of Convex. The goal of 
 - Cannon integration
 - Add support for tags from a fixed list defined --- just did a stringarray
 - Add media integration
-    - Add display of media content
-    - Don't reupload media content if it hasn't changed
-    - Change semantics of default media to default rich text media
-    - Test hero image for media on a regular collection
-- Loading states on save
-- Add support for imagepicker with media uploads to convex
-- Clean up UI
-    - Improve margin on top
-    - Make edit a modal that pops up
-    - Make UI inline in some cases
+    - :check: Add display of media content
+    - :check: Don't reupload media content if it hasn't changed
+    - :check: Change semantics of default media to default rich text media
+    - :check: Test hero image for media on a regular collection
+    - :check: Rich text media works
+- :check: Add support for imagepicker with media uploads to convex
+    - Bug: image doesn't load until you refresh the cms page entirely - suspect something to do with using the convexhttpclient
 - Move everything from blog.cryingpotato.com
     - Move existing MD articles from my current payload CMS instance (also uses Lexical, so should be easy).
     - Move MDX articles
     - :check: Move logs
     - Move showcase
     - Move ideas
+- Clean up UI
+    - Improve margin on top
+    - Make edit a modal that pops up
+    - Make UI inline in some cases
+- Loading states on save
 
 2. Now can come other things like:
 - Autodeploy URL

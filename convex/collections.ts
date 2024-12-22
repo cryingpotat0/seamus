@@ -8,7 +8,20 @@ export const list = query({
         collectionName: v.string(),
     },
     handler: async (ctx, args) => {
-        return await ctx.db.query(args.collectionName).collect();
+        const items = await ctx.db.query(args.collectionName).collect();
+        const collectionSchema = schema.collections[args.collectionName];
+
+        // Hydrate media fields
+        for (const item of items) {
+            for (const field of collectionSchema.fields) {
+                if (field.type === "media" && item[field.name]) {
+                    item[field.name].mediaUrl = await ctx.storage.getUrl(item[field.name].mediaId);
+                }
+            }
+        }
+
+        return items;
+
     },
 });
 

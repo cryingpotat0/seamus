@@ -63,16 +63,22 @@ export function EditView({
             for (const field of collection.fields) {
                 if (field.type === "media" && editedItem[field.name]) {
                     const { file, mediaUrl: _, mediaType } = editedItem[field.name];
-                    const mediaUrl = await generateUploadUrl();
-                    const result = await fetch(mediaUrl, {
-                        method: 'POST',
-                        headers: {
-                            "Content-Type": file.type,
-                        },
-                        body: file,
-                    });
-                    const { storageId } = await result.json();
-                    editedItem[field.name] = { mediaUrl: storageId, mediaType };
+                    if (file) {
+                        // Poor man's way of not overwriting existing uploads..
+                        // probably should use something hash based instead.
+                        const mediaUrl = await generateUploadUrl();
+                        const result = await fetch(mediaUrl, {
+                            method: 'POST',
+                            headers: {
+                                "Content-Type": file.type,
+                            },
+                            body: file,
+                        });
+                        const { storageId } = await result.json();
+                        editedItem[field.name] = { mediaId: storageId, mediaType };
+                    } else {
+                        delete editedItem[field.name]['mediaUrl'];
+                    }
                 }
             }
 
