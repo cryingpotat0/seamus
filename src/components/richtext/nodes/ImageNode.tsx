@@ -33,6 +33,7 @@ export interface ImagePayload {
     maxWidth?: number;
     showCaption?: boolean;
     src: string;
+    storageId?: string;
     width?: number;
     captionsEnabled?: boolean;
 }
@@ -65,6 +66,7 @@ export type SerializedImageNode = Spread<
         showCaption: boolean;
         src: string;
         width?: number;
+        storageId?: string;
     },
     SerializedLexicalNode
 >;
@@ -77,8 +79,8 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     __maxWidth: number;
     __showCaption: boolean;
     __caption: LexicalEditor;
-    // Captions cannot yet be used within editor cells
     __captionsEnabled: boolean;
+    __storageId?: string;
 
     static getType(): string {
         return 'image';
@@ -95,11 +97,12 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
             node.__caption,
             node.__captionsEnabled,
             node.__key,
+            node.__storageId,
         );
     }
 
     static importJSON(serializedNode: SerializedImageNode): ImageNode {
-        const { altText, height, width, maxWidth, caption, src, showCaption } =
+        const { altText, height, width, maxWidth, caption, src, showCaption, storageId } =
             serializedNode;
         const node = $createImageNode({
             altText,
@@ -145,6 +148,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
         caption?: LexicalEditor,
         captionsEnabled?: boolean,
         key?: NodeKey,
+        storageId?: string,
     ) {
         super(key);
         this.__src = src;
@@ -159,6 +163,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
                 nodes: [],
             });
         this.__captionsEnabled = captionsEnabled || captionsEnabled === undefined;
+        this.__storageId = storageId;
     }
 
     exportJSON(): SerializedImageNode {
@@ -168,7 +173,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
             height: this.__height === 'inherit' ? 0 : this.__height,
             maxWidth: this.__maxWidth,
             showCaption: this.__showCaption,
-            src: this.getSrc(),
+            src: this.__storageId ? `convex://${this.__storageId}` : this.getSrc(),
             type: 'image',
             version: 1,
             width: this.__width === 'inherit' ? 0 : this.__width,

@@ -62,6 +62,8 @@ import ImageResizer from '../ui/ImageResizer';
 import { EmojiNode } from './EmojiNode';
 import { $isImageNode } from './ImageNode';
 import { KeywordNode } from './KeywordNode';
+import { useMedia } from '../context/MediaContext';
+import useFlashMessage from '../hooks/useFlashMessage';
 
 const imageCache = new Set();
 
@@ -168,6 +170,32 @@ export default function ImageComponent({
     const activeEditorRef = useRef<LexicalEditor | null>(null);
     const [isLoadError, setIsLoadError] = useState<boolean>(false);
     const isEditable = useLexicalEditable();
+
+    const [isLoading, setIsLoading] = useState(false);
+    const [imageSrc, setImageSrc] = useState<string | null>(null);
+    const { downloadMedia } = useMedia();
+    const showFlashMessage = useFlashMessage();
+    console.log('image', src.slice(100), altText.slice(100));
+
+    useEffect(() => {
+        if (src.startsWith('convex://')) {
+            setIsLoading(true);
+            const storageId = src.replace('convex://', '');
+            downloadMedia(storageId)
+                .then(({ storageUrl }) => {
+                    setImageSrc(storageUrl);
+                })
+                .catch((error) => {
+                    showFlashMessage('Failed to load image');
+                    console.error('Failed to load image:', error);
+                })
+                .finally(() => {
+                    setIsLoading(false);
+                });
+        } else {
+            setImageSrc(src);
+        }
+    }, [src, downloadMedia, showFlashMessage]);
 
     const $onDelete = useCallback(
         (payload: KeyboardEvent) => {
@@ -398,77 +426,81 @@ export default function ImageComponent({
     const isFocused = (isSelected || isResizing) && isEditable;
     return (
         <Suspense fallback={null}>
-            <>
-                <div draggable={draggable}>
-                    {isLoadError ? (
-                        <BrokenImage />
-                    ) : (
-                        <LazyImage
-                            className={
-                                isFocused
-                                    ? `focused ${$isNodeSelection(selection) ? 'draggable' : ''}`
-                                    : null
-                            }
-                            src={src}
-                            altText={altText}
+            {isLoading ? (
+                <div className="image-loading">Loading...</div>
+            ) : (
+                <>
+                    <div draggable={draggable}>
+                        {isLoadError ? (
+                            <BrokenImage />
+                        ) : (
+                            <LazyImage
+                                className={
+                                    isFocused
+                                        ? `focused ${$isNodeSelection(selection) ? 'draggable' : ''}`
+                                        : null
+                                }
+                                src={imageSrc || ''}
+                                altText={altText}
+                                imageRef={imageRef}
+                                width={width}
+                                height={height}
+                                maxWidth={maxWidth}
+                                onError={() => setIsLoadError(true)}
+                            />
+                        )}
+                    </div>
+
+                    {showCaption && (
+                        <div className="image-caption-container">
+                            <LexicalNestedComposer
+                                initialEditor={caption}
+                                initialNodes={[
+                                    RootNode,
+                                    TextNode,
+                                    LineBreakNode,
+                                    ParagraphNode,
+                                    LinkNode,
+                                    EmojiNode,
+                                    HashtagNode,
+                                    KeywordNode,
+                                ]}>
+                                <AutoFocusPlugin />
+                                <MentionsPlugin />
+                                <LinkPlugin />
+                                <EmojisPlugin />
+                                <HashtagPlugin />
+                                <KeywordsPlugin />
+                                <HistoryPlugin externalHistoryState={historyState} />
+                                <RichTextPlugin
+                                    contentEditable={
+                                        <ContentEditable
+                                            placeholder="Enter a caption..."
+                                            placeholderClassName="ImageNode__placeholder"
+                                            className="ImageNode__contentEditable"
+                                        />
+                                    }
+                                    ErrorBoundary={LexicalErrorBoundary}
+                                />
+                                {showNestedEditorTreeView === true ? <TreeViewPlugin /> : null}
+                            </LexicalNestedComposer>
+                        </div>
+                    )}
+                    {resizable && $isNodeSelection(selection) && isFocused && (
+                        <ImageResizer
+                            showCaption={showCaption}
+                            setShowCaption={setShowCaption}
+                            editor={editor}
+                            buttonRef={buttonRef}
                             imageRef={imageRef}
-                            width={width}
-                            height={height}
                             maxWidth={maxWidth}
-                            onError={() => setIsLoadError(true)}
+                            onResizeStart={onResizeStart}
+                            onResizeEnd={onResizeEnd}
+                            captionsEnabled={!isLoadError && captionsEnabled}
                         />
                     )}
-                </div>
-
-                {showCaption && (
-                    <div className="image-caption-container">
-                        <LexicalNestedComposer
-                            initialEditor={caption}
-                            initialNodes={[
-                                RootNode,
-                                TextNode,
-                                LineBreakNode,
-                                ParagraphNode,
-                                LinkNode,
-                                EmojiNode,
-                                HashtagNode,
-                                KeywordNode,
-                            ]}>
-                            <AutoFocusPlugin />
-                            <MentionsPlugin />
-                            <LinkPlugin />
-                            <EmojisPlugin />
-                            <HashtagPlugin />
-                            <KeywordsPlugin />
-                            <HistoryPlugin externalHistoryState={historyState} />
-                            <RichTextPlugin
-                                contentEditable={
-                                    <ContentEditable
-                                        placeholder="Enter a caption..."
-                                        placeholderClassName="ImageNode__placeholder"
-                                        className="ImageNode__contentEditable"
-                                    />
-                                }
-                                ErrorBoundary={LexicalErrorBoundary}
-                            />
-                            {showNestedEditorTreeView === true ? <TreeViewPlugin /> : null}
-                        </LexicalNestedComposer>
-                    </div>
-                )}
-                {resizable && $isNodeSelection(selection) && isFocused && (
-                    <ImageResizer
-                        showCaption={showCaption}
-                        setShowCaption={setShowCaption}
-                        editor={editor}
-                        buttonRef={buttonRef}
-                        imageRef={imageRef}
-                        maxWidth={maxWidth}
-                        onResizeStart={onResizeStart}
-                        onResizeEnd={onResizeEnd}
-                        captionsEnabled={!isLoadError && captionsEnabled}
-                    />
-                )}
-            </>
+                </>
+            )}
         </Suspense>
     );
 }

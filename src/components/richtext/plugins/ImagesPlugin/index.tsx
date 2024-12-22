@@ -26,7 +26,7 @@ import {
     LexicalCommand,
     LexicalEditor,
 } from 'lexical';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 
 import {
     $createImageNode,
@@ -38,6 +38,8 @@ import Button from '../../ui/Button';
 import { DialogActions, DialogButtonsList } from '../../ui/Dialog';
 import FileInput from '../../ui/FileInput';
 import TextInput from '../../ui/TextInput';
+import { useMedia } from '../../context/MediaContext';
+import useFlashMessage from '../../hooks/useFlashMessage';
 
 export type InsertImagePayload = Readonly<ImagePayload>;
 
@@ -87,29 +89,61 @@ export function InsertImageUploadedDialogBody({
 }: {
     onClick: (payload: InsertImagePayload) => void;
 }) {
+    const { uploadMedia } = useMedia();
+    const showFlashMessage = useFlashMessage();
+    const [isUploading, setIsUploading] = useState(false);
     const [src, setSrc] = useState('');
     const [altText, setAltText] = useState('');
 
-    const isDisabled = src === '';
+    const handleUpload = useCallback(
+        async (files: FileList | null) => {
+            if (!files?.length) return;
+            const file = files[0];
+            
+            setIsUploading(true);
+            try {
+                const { storageId } = await uploadMedia(file);
+                onClick({
+                    altText: altText || file.name,
+                    src: `convex://${storageId}`,
+                    storageId,
+                });
+            } catch (error) {
+                showFlashMessage('Failed to upload image');
+                console.error('Failed to upload image:', error);
+            } finally {
+                setIsUploading(false);
+            }
+        },
+        [uploadMedia, showFlashMessage, onClick, altText]
+    );
 
-    const loadImage = (files: FileList | null) => {
+    const handleFilePreview = useCallback((files: FileList | null) => {
+        if (!files?.length) return;
+        const file = files[0];
+        
         const reader = new FileReader();
-        reader.onload = function() {
+        reader.onload = () => {
             if (typeof reader.result === 'string') {
                 setSrc(reader.result);
+                if (!altText) {
+                    setAltText(file.name);
+                }
             }
-            return '';
         };
-        if (files !== null) {
-            reader.readAsDataURL(files[0]);
-        }
-    };
+        reader.readAsDataURL(file);
+    }, [altText]);
+
+    console.log('image',src, altText);
 
     return (
         <>
             <FileInput
                 label="Image Upload"
-                onChange={loadImage}
+                onChange={(files) => {
+                    handleFilePreview(files);
+                    handleUpload(files);
+                }}
                 accept="image/*"
                 data-test-id="image-modal-file-upload"
             />
@@ -120,14 +154,16 @@ export function InsertImageUploadedDialogBody({
                 value={altText}
                 data-test-id="image-modal-alt-text-input"
             />
-            <DialogActions>
-                <Button
-                    data-test-id="image-modal-file-upload-btn"
-                    disabled={isDisabled}
-                    onClick={() => onClick({ altText, src })}>
-                    Confirm
-                </Button>
-            </DialogActions>
+            {src && (
+                <div className="preview-image">
+                    <img src={src} alt={altText} style={{maxWidth: '200px'}} />
+                </div>
+            )}
+            {isUploading && (
+                <div className="upload-status">
+                    Uploading image...
+                </div>
+            )}
         </>
     );
 }
@@ -186,7 +222,7 @@ export default function ImagesPlugin({
     captionsEnabled?: boolean;
 }): JSX.Element | null {
     const [editor] = useLexicalComposerContext();
-
+  
     useEffect(() => {
         if (!editor.hasNodes([ImageNode])) {
             throw new Error('ImagesPlugin: ImageNode not registered on editor');
