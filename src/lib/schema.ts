@@ -122,11 +122,57 @@ const mediaSchema: CollectionSchema = {
     ]
 }
 
+const showcaseSchema: CollectionSchema = {
+    fields: [
+        {
+            name: "title",
+            type: PlainText,
+        },
+        {
+            name: "description",
+            type: PlainText,
+        },
+        {
+            name: "slug",
+            type: PlainText,
+        },
+        {
+            name: "pubDate",
+            type: DateField,
+        },
+        {
+            name: "updatedDate",
+            type: DateField,
+        },
+        {
+            name: "content",
+            type: RichText,
+        },
+        {
+            name: "tags",
+            type: StringArrayField,
+        },
+        {
+            name: "heroImage",
+            type: MediaField,
+        },
+        {
+            name: "icon",
+            type: MediaField,
+        },
+        {
+            name: "url",
+            type: PlainText,
+        },
+    ]
+}
+
 export const schema: Schema = {
     collections: {
         posts: postSchema,
         logs: logSchema,
         media: mediaSchema,
+        showcase: showcaseSchema,
     },
     mediaProviderCollection: "media"
 };
@@ -151,7 +197,7 @@ function toConvexField(field: Field): any {
             return v.array(v.string())
         case MediaField:
             return v.object({
-                mediaUrl: v.string(),
+                mediaId: v.string(),
                 mediaType: v.string(),
             })
         default:
@@ -172,7 +218,7 @@ function toConvexSchema(schema: Schema): any {
     if (!isMediaCollection(schema.collections[schema.mediaProviderCollection])) {
         throw new Error("Media provider collection must exist in the schema");
     }
-    console.log(`Found media provider collection: ${schema.mediaProviderCollection}`);
+    // console.log(`Found media provider collection: ${schema.mediaProviderCollection}`);
 
     for (const [collection, collectionSchema] of Object.entries(schema.collections)) {
         const collectionSchemaConvex: Record<string, any> = {

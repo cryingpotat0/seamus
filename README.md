@@ -15,6 +15,11 @@ Seamus (like CeeEmUss) is a CMS for my blog built on top of Convex. The goal of 
 - Cannon integration
 - Add support for tags from a fixed list defined --- just did a stringarray
 - Add media integration
+    - Add display of media content
+    - Don't reupload media content if it hasn't changed
+    - Change semantics of default media to default rich text media
+    - Test hero image for media on a regular collection
+- Loading states on save
 - Add support for imagepicker with media uploads to convex
 - Clean up UI
     - Improve margin on top
@@ -23,7 +28,7 @@ Seamus (like CeeEmUss) is a CMS for my blog built on top of Convex. The goal of 
 - Move everything from blog.cryingpotato.com
     - Move existing MD articles from my current payload CMS instance (also uses Lexical, so should be easy).
     - Move MDX articles
-    - Move logs
+    - :check: Move logs
     - Move showcase
     - Move ideas
 
@@ -32,6 +37,7 @@ Seamus (like CeeEmUss) is a CMS for my blog built on top of Convex. The goal of 
 - Pagination
 - Live preview
 - Autosave
+- Delete media on delete of row
 - Add validation to schemas with validation funcs
 - Add relationships and create a tags table as another collection
 - Improve convex types for CRUD ops
@@ -41,6 +47,10 @@ Seamus (like CeeEmUss) is a CMS for my blog built on top of Convex. The goal of 
     - Allow a cors proxy through convex for weird logic for the embedding
     - Allow editing embeds post facto
     - Allow resizing Embeds
+- media
+    - Automatically have different processing based on type of media - e.g. different image sizes
+- datefields
+    - Automatically support created at/ updated at
 
 3. Make it general
 - Allow to connect to a random github etc.

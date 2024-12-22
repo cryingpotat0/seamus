@@ -1,14 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import RichTextEditor from './components/richtext'
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Calendar } from "@/components/ui/calendar";
-import { PlainText, RichText, schema } from "./lib/schema";
+import { RichText, schema } from "./lib/schema";
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { $generateHtmlFromNodes } from "@lexical/html";
+import { FieldDisplay } from './components/FieldDisplay';
 
 export function EditView({
     collectionName,
@@ -60,13 +56,13 @@ export function EditView({
                     lexicalJson: JSON.stringify(richFieldDataRefs.lexicalJson.current),
                     html: richFieldDataRefs.html.current,
                 };
-                console.log(richFieldData);
                 editedItem[fieldName] = richFieldData
             }
+            console.log('rich field data', editedItem);
 
             for (const field of collection.fields) {
-                if (field.type === "media") {
-                    const file = editedItem[field.name][0];
+                if (field.type === "media" && editedItem[field.name]) {
+                    const { file, mediaUrl: _, mediaType } = editedItem[field.name];
                     const mediaUrl = await generateUploadUrl();
                     const result = await fetch(mediaUrl, {
                         method: 'POST',
@@ -76,7 +72,7 @@ export function EditView({
                         body: file,
                     });
                     const { storageId } = await result.json();
-                    editedItem[field.name] = { mediaUrl: storageId, mediaType: file.type };
+                    editedItem[field.name] = { mediaUrl: storageId, mediaType };
                 }
             }
 
@@ -97,54 +93,13 @@ export function EditView({
             <div className="p-4 border rounded-lg">
                 <h2 className="text-2xl mb-4">Edit {collectionName} Item</h2>
                 {collection.fields.map((field) => (
-                    <div key={field.name} className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700">{field.name}</label>
-                        {field.type === PlainText && (
-                            <Input
-                                value={editedItem[field.name]}
-                                onChange={(e) => handleChange(field, e.target.value)}
-                            />
-                        )}
-                        {field.type === RichText && (
-                            <RichTextEditor
-                                initialEditorState={editedItem[field.name]?.['lexicalJson']}
-                                editorRef={richTextEditorRefs[field.name]}
-                            />
-                        )}
-                        {field.type === "boolean" && (
-                            <Checkbox
-                                checked={editedItem[field.name]}
-                                onCheckedChange={(checked) => handleChange(field, checked)}
-                            />
-                        )}
-                        {field.type === "date" && (
-                            <Calendar
-                                mode="single"
-                                selected={new Date(editedItem[field.name])}
-                                onSelect={(date: any) => handleChange(field, date.toISOString())}
-                            />
-                        )}
-                        {field.type === "int64" && (
-                            <Input
-                                type="number"
-                                value={editedItem[field.name]}
-                                onChange={(e) => handleChange(field, parseInt(e.target.value, 10))}
-                            />
-                        )}
-                        {field.type === "stringarray" && (
-                            <Input
-                                value={editedItem[field.name].join(',')}
-                                onChange={(e) => handleChange(field, e.target.value.split(','))}
-                            />
-                        )}
-                        {field.type === "media" && (
-                            <Input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => handleChange(field, e.target.files)}
-                            />
-                        )}
-                    </div>
+                    <FieldDisplay
+                        key={field.name}
+                        field={field}
+                        value={editedItem[field.name]}
+                        onChange={handleChange}
+                        richTextEditorRefs={field.type === RichText ? richTextEditorRefs[field.name] : undefined}
+                    />
                 ))}
                 <Button onClick={handleSave}>Save</Button>
                 <Button variant="outline" onClick={onClose}>Cancel</Button>
