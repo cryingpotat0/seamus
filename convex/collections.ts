@@ -80,6 +80,7 @@ export const remove = mutation({
 
         // Delete all media associated with the item. 
         // TODO: is this transactional?
+        // TODO: also delete media from the richTextMediaProvider of the collection.
         const collectionSchema = schema.collections[args.collectionName];
         for (const field of collectionSchema.fields) {
             if (field.type === "media" && item[field.name]) {
@@ -119,6 +120,11 @@ export const generateDownloadUrl = query({
     },
     handler: async (ctx, args) => {
         // TODO: handle deprecation warning for storage.
-        return await ctx.storage.getUrl(args.storageId);
+        const item = await ctx.storage.getUrl(args.storageId);
+        if (!item) {
+            throw new Error('Failed to generate download URL');
+        }
+
+        return item;
     }
 })

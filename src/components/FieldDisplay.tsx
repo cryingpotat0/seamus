@@ -4,15 +4,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { PlainText, RichText } from "../lib/schema";
 import RichTextEditor from './richtext';
 import { Button } from "./ui/button";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api"
-import { MediaProvider } from './richtext/context/MediaContext';
-import { useCallback } from "react";
-import { ConvexHttpClient } from "convex/browser";
 
 
-// TODO: is there a better way?
-const convex = new ConvexHttpClient(import.meta.env.VITE_CONVEX_URL as string);
 
 // Define all possible field types
 type FieldType = typeof PlainText | typeof RichText | "boolean" | "date" | "int64" | "stringarray" | "media";
@@ -34,25 +27,6 @@ interface FieldDisplayProps {
 
 export function FieldDisplay({ field, value, onChange, richTextEditorRefs }: FieldDisplayProps) {
 
-    const uploadMedia = useCallback(async (file: File) => {
-        const uploadUrl = await convex.mutation(api.collections.generateUploadUrl);
-        // Upload file
-        const result = await fetch(uploadUrl, {
-            method: 'POST',
-            headers: {
-                "Content-Type": file.type,
-            },
-            body: file,
-        });
-        const { storageId } = await result.json();
-        const storageUrl = await convex.query(api.collections.generateDownloadUrl, { storageId });
-        return { storageId, storageUrl };
-    }, []);
-
-    const downloadMedia = useCallback(async (storageId: string) => {
-        const storageUrl = await convex.query(api.collections.generateDownloadUrl, { storageId });
-        return { storageUrl };
-    }, []);
 
     const renderField = () => {
         switch (field.type) {
@@ -65,12 +39,10 @@ export function FieldDisplay({ field, value, onChange, richTextEditorRefs }: Fie
                 );
             case RichText:
                 return (
-                    <MediaProvider uploadMedia={uploadMedia} downloadMedia={downloadMedia}>
-                        <RichTextEditor
-                            initialEditorState={value?.['lexicalJson']}
-                            editorRef={richTextEditorRefs}
-                        />
-                    </MediaProvider>
+                    <RichTextEditor
+                        initialEditorState={value?.['lexicalJson']}
+                        editorRef={richTextEditorRefs}
+                    />
                 );
             case "boolean":
                 return (

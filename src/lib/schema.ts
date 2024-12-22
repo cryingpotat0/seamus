@@ -40,7 +40,7 @@ type CollectionSchema = {
 
 type Schema = {
     collections: { [collectionName: string]: CollectionSchema };
-    mediaProviderCollection: string;
+    richTextMediaProviderCollection: string;
 }
 
 const postSchema: CollectionSchema = {
@@ -167,6 +167,23 @@ const showcaseSchema: CollectionSchema = {
     ]
 }
 
+const ideasSchema: CollectionSchema = {
+    fields: [
+        {
+            name: "title",
+            type: PlainText,
+        },
+        {
+            name: "content",
+            type: RichText,
+        },
+        {
+            name: "updatedDate",
+            type: DateField,
+        }
+    ]
+}
+
 export const schema: Schema = {
     collections: {
         posts: postSchema,
@@ -174,7 +191,7 @@ export const schema: Schema = {
         media: mediaSchema,
         showcase: showcaseSchema,
     },
-    mediaProviderCollection: "media"
+    richTextMediaProviderCollection: "media"
 };
 
 // Convex utils.
@@ -199,6 +216,8 @@ function toConvexField(field: Field): any {
             return v.object({
                 mediaId: v.string(),
                 mediaType: v.string(),
+                // Not the best schema -- but keeps a pointer to the source item.
+                sourceItemId: v.optional(v.string()), // can't use v.id()
             })
         default:
             // let _: never = field
@@ -215,7 +234,7 @@ function toConvexSchema(schema: Schema): any {
     const schemaConvex: any = {};
 
     // Ensure that the default media provider exists.
-    if (!isMediaCollection(schema.collections[schema.mediaProviderCollection])) {
+    if (!isMediaCollection(schema.collections[schema.richTextMediaProviderCollection])) {
         throw new Error("Media provider collection must exist in the schema");
     }
     // console.log(`Found media provider collection: ${schema.mediaProviderCollection}`);

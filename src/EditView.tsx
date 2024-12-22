@@ -5,6 +5,12 @@ import { Button } from "@/components/ui/button";
 import { RichText, schema } from "./lib/schema";
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { FieldDisplay } from './components/FieldDisplay';
+import { useCallback } from "react";
+import { ConvexHttpClient } from "convex/browser";
+import { MediaProvider } from './components/richtext/context/MediaContext';
+
+// TODO: is there a better way?
+const convex = new ConvexHttpClient(import.meta.env.VITE_CONVEX_URL as string);
 
 export function EditView({
     collectionName,
@@ -27,6 +33,8 @@ export function EditView({
         }
     } = {};
     const collection = schema.collections[collectionName];
+    const mediaCollectionName = collection.mediaProvider || schema.richTextMediaProviderCollection;
+
     for (const field of collection.fields) {
         if (field.type === RichText) {
             richTextEditorRefs[field.name] = {
@@ -35,7 +43,6 @@ export function EditView({
             }
         }
     }
-
 
     const saveItem = useMutation(api.collections.save);
     const generateUploadUrl = useMutation(api.collections.generateUploadUrl);
@@ -47,6 +54,40 @@ export function EditView({
     const handleChange = (field: any, value: any) => {
         setEditedItem((prev: any) => ({ ...prev, [field.name]: value }));
     };
+
+    const uploadRichTextMedia = useCallback(async (file: File) => {
+        const uploadUrl = await convex.mutation(api.collections.generateUploadUrl);
+        // Upload file
+        const result = await fetch(uploadUrl, {
+            method: 'POST',
+            headers: {
+                "Content-Type": file.type,
+            },
+            body: file,
+        });
+        const { storageId } = await result.json();
+        const storageUrl = await convex.query(api.collections.generateDownloadUrl, { storageId });
+
+        // Save it to the media collection for tracking.
+        await convex.mutation(api.collections.add, {
+            collectionName: mediaCollectionName,
+            item: {
+                description: file.name,
+                media: {
+                    mediaId: storageId,
+                    mediaType: file.type,
+                    sourceItemId: itemId,
+                },
+            },
+        });
+
+        return { storageId, storageUrl };
+    }, []);
+
+    const downloadRichTextMedia = useCallback(async (storageId: string) => {
+        const storageUrl = await convex.query(api.collections.generateDownloadUrl, { storageId });
+        return { storageUrl };
+    }, []);
 
     const handleSave = async () => {
         try {
@@ -97,18 +138,20 @@ export function EditView({
     return (
         <>
             <div className="p-4 border rounded-lg">
-                <h2 className="text-2xl mb-4">Edit {collectionName} Item</h2>
-                {collection.fields.map((field) => (
-                    <FieldDisplay
-                        key={field.name}
-                        field={field}
-                        value={editedItem[field.name]}
-                        onChange={handleChange}
-                        richTextEditorRefs={field.type === RichText ? richTextEditorRefs[field.name] : undefined}
-                    />
-                ))}
-                <Button onClick={handleSave}>Save</Button>
-                <Button variant="outline" onClick={onClose}>Cancel</Button>
+                <MediaProvider uploadMedia={uploadRichTextMedia} downloadMedia={downloadRichTextMedia}>
+                    <h2 className="text-2xl mb-4">Edit {collectionName} Item</h2>
+                    {collection.fields.map((field) => (
+                        <FieldDisplay
+                            key={field.name}
+                            field={field}
+                            value={editedItem[field.name]}
+                            onChange={handleChange}
+                            richTextEditorRefs={field.type === RichText ? richTextEditorRefs[field.name] : undefined}
+                        />
+                    ))}
+                    <Button onClick={handleSave}>Save</Button>
+                    <Button variant="outline" onClick={onClose}>Cancel</Button>
+                </MediaProvider>
             </div>
 
             <AlertDialog open={error !== null} onOpenChange={() => setError(null)}>
