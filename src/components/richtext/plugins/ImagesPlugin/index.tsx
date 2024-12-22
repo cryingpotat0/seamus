@@ -102,10 +102,10 @@ export function InsertImageUploadedDialogBody({
 
             setIsUploading(true);
             try {
-                const { storageId } = await uploadMedia(file);
+                const { storageId, storageUrl } = await uploadMedia(file);
                 onClick({
                     altText: altText || file.name,
-                    src: `convex://${storageId}`,
+                    src: storageUrl,
                     storageId,
                 });
             } catch (error) {

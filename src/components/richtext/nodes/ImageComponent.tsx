@@ -148,6 +148,7 @@ export default function ImageComponent({
     showCaption,
     caption,
     captionsEnabled,
+    storageId,
 }: {
     altText: string;
     caption: LexicalEditor;
@@ -159,6 +160,7 @@ export default function ImageComponent({
     src: string;
     width: 'inherit' | number;
     captionsEnabled: boolean;
+    storageId?: string;
 }): JSX.Element {
     const imageRef = useRef<null | HTMLImageElement>(null);
     const buttonRef = useRef<HTMLButtonElement | null>(null);
@@ -175,12 +177,11 @@ export default function ImageComponent({
     const [imageSrc, setImageSrc] = useState<string | null>(null);
     const { downloadMedia } = useMedia();
     const showFlashMessage = useFlashMessage();
-    console.log('image', src.slice(100), altText.slice(100));
+    console.log('storageId', storageId);
 
     useEffect(() => {
-        if (src.startsWith('convex://')) {
+        if (storageId) {
             setIsLoading(true);
-            const storageId = src.replace('convex://', '');
             downloadMedia(storageId)
                 .then(({ storageUrl }) => {
                     setImageSrc(storageUrl);

@@ -173,10 +173,11 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
             height: this.__height === 'inherit' ? 0 : this.__height,
             maxWidth: this.__maxWidth,
             showCaption: this.__showCaption,
-            src: this.__storageId ? `convex://${this.__storageId}` : this.getSrc(),
+            src: this.getSrc(),
             type: 'image',
             version: 1,
             width: this.__width === 'inherit' ? 0 : this.__width,
+            storageId: this.__storageId,
         };
     }
 
@@ -223,6 +224,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
             <Suspense fallback={null}>
                 <ImageComponent
                     src={this.__src}
+                    storageId={this.__storageId}
                     altText={this.__altText}
                     width={this.__width}
                     height={this.__height}
@@ -248,6 +250,7 @@ export function $createImageNode({
     showCaption,
     caption,
     key,
+    storageId,
 }: ImagePayload): ImageNode {
     return $applyNodeReplacement(
         new ImageNode(
@@ -260,6 +263,7 @@ export function $createImageNode({
             caption,
             captionsEnabled,
             key,
+            storageId,
         ),
     );
 }
