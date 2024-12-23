@@ -54,6 +54,7 @@ Seamus (like CeeEmUss) is a CMS for my blog built on top of Convex. The goal of 
 - datefields
     - Automatically support created at/ updated at
 - hydrate media to some static image provider like cloudflare rather than just using the raw convex values
+- migrationview should allow error values
 
 3. Make it general
 - Allow to connect to a random github etc.

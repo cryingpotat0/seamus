@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { EditView } from "./EditView";
-import { BooleanField, DateField, Field, Int64Field, MediaField, PlainText, RichText, schema, StringArrayField } from "./lib/schema";
+import { BooleanField, DateField, Field, NumberField, MediaField, PlainText, RichText, schema, StringArrayField } from "./lib/schema";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -172,7 +172,7 @@ function renderTableCell(value: any, fieldSchema: Field | undefined) {
             return value ? "Yes" : "No";
         case DateField:
             return new Date(value).toLocaleDateString();
-        case Int64Field:
+        case NumberField:
             return value.toString();
         case StringArrayField:
             return value?.join(", ");

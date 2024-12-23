@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PlainText, RichText, schema } from "./lib/schema";
+import { NumberField, RichText, schema } from "./lib/schema";
 import {
     Tooltip,
     TooltipContent,
@@ -47,52 +47,62 @@ export function MigrationView({
         const text = await file.text();
         const lines = text.trim().split('\n');
         const parsedData = lines.map(line => JSON.parse(line));
-        
+
         validateAndProcessData(parsedData);
     };
+
+    const collectionSchema = schema.collections[collection];
 
     const validateAndProcessData = useCallback(async (rawData: any[]) => {
         const newErrors: ValidationError[] = [];
         const processedData = await Promise.all(rawData.map(async (row, rowIndex) => {
             const processedRow: any = {};
 
-            for (const field of schema[collection].fields) {
+            for (const field of collectionSchema.fields) {
                 const value = row[field.name];
 
-                if (value === undefined) {
-                    newErrors.push({
-                        row: rowIndex,
-                        column: field.name,
-                        message: "Missing required field"
-                    });
-                    continue;
-                }
+                // if (value === undefined) {
+                //     newErrors.push({
+                //         row: rowIndex,
+                //         column: field.name,
+                //         message: "Missing required field"
+                //     });
+                //     continue;
+                // }
 
-                if (field.type === RichText && typeof value === 'string') {
-                    // Convert markdown to Lexical format
-                    const editor = createHeadlessEditor({
-                        nodes: [...PlaygroundNodes],
-                        onError: () => {},
-                    });
+                if (field.type === RichText) {
+                    if (!value) {
+                        processedRow[field.name] = {
+                            lexicalJson: JSON.stringify({}),
+                            html: ''
+                        }
+                    } else {
+                        // Convert markdown to Lexical format
+                        const editor = createHeadlessEditor({
+                            nodes: [...PlaygroundNodes],
+                            onError: () => { },
+                        });
 
-                    await editor.update(() => {
-                        $convertFromMarkdownString(value, TRANSFORMERS);
-                    });
+                        editor.update(() => {
+                            $convertFromMarkdownString(value, TRANSFORMERS);
+                        });
 
-                    const editorState = editor.getEditorState();
-                    let html = '';
-                    editor.update(() => {
-                        html = $generateHtmlFromNodes(editor, null);
-                    });
+                        const editorState = editor.getEditorState();
+                        let html = '';
+                        editor.update(() => {
+                            html = $generateHtmlFromNodes(editor, null);
+                        });
 
-                    processedRow[field.name] = {
-                        lexicalJson: JSON.stringify(editorState),
-                        html
-                    };
+                        processedRow[field.name] = {
+                            lexicalJson: JSON.stringify(editorState),
+                            html
+                        };
+                    }
                 } else {
                     processedRow[field.name] = value;
                 }
             }
+
 
             return processedRow;
         }));
@@ -119,8 +129,8 @@ export function MigrationView({
         <div className="p-4">
             <div className="flex justify-between mb-4">
                 <h2 className="text-2xl">Import {collection}</h2>
-                <Input 
-                    type="file" 
+                <Input
+                    type="file"
                     accept=".jsonl"
                     onChange={handleFileUpload}
                     className="max-w-xs"
@@ -132,7 +142,7 @@ export function MigrationView({
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                {schema[collection].fields.map((field) => (
+                                {collectionSchema.fields.map((field) => (
                                     <TableHead key={field.name}>{field.name}</TableHead>
                                 ))}
                             </TableRow>
@@ -140,16 +150,16 @@ export function MigrationView({
                         <TableBody>
                             {data.map((row, rowIndex) => (
                                 <TableRow key={rowIndex}>
-                                    {schema[collection].fields.map((field) => (
+                                    {collectionSchema.fields.map((field) => (
                                         <TooltipProvider key={field.name}>
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
-                                                    <TableCell 
-                                                        className={hasError(rowIndex, field.name) ? 
+                                                    <TableCell
+                                                        className={hasError(rowIndex, field.name) ?
                                                             "bg-red-100" : ""}
                                                     >
-                                                        {field.type === RichText ? 
-                                                            "Rich Text Content" : 
+                                                        {field.type === RichText ?
+                                                            "Rich Text Content" :
                                                             String(row[field.name])}
                                                     </TableCell>
                                                 </TooltipTrigger>
@@ -167,7 +177,7 @@ export function MigrationView({
                     </Table>
 
                     <div className="mt-4 flex gap-2">
-                        <Button 
+                        <Button
                             onClick={handleSave}
                             disabled={errors.length > 0}
                         >

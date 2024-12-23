@@ -12,8 +12,8 @@ export const RichText: RichText = "richText"
 export type DateField = "date"
 export const DateField: DateField = "date"
 
-export type Int64Field = "int64"
-export const Int64Field = "int64"
+export type NumberField = "number"
+export const NumberField = "number"
 
 export type BooleanField = "boolean"
 export const BooleanField = "boolean"
@@ -29,7 +29,7 @@ type CommonFieldOptions = {
 }
 
 export type Field = CommonFieldOptions & {
-    type: PlainText | RichText | DateField | Int64Field | BooleanField | StringArrayField | MediaField;
+    type: PlainText | RichText | DateField | NumberField | BooleanField | StringArrayField | MediaField;
 }
 
 
@@ -184,12 +184,44 @@ const ideasSchema: CollectionSchema = {
     ]
 }
 
+const bookSchema: CollectionSchema = {
+    fields: [
+        {
+            name: "title",
+            type: PlainText
+        },
+        {
+            name: "category",
+            type: PlainText
+        },
+        {
+            name: "pubDate",
+            type: DateField
+        },
+        {
+            name: "year",
+            type: NumberField
+        },
+        {
+            name: "rating",
+            type: NumberField
+        },
+        {
+            name: "review",
+            type: RichText
+        },
+    ]
+}
+
+
 export const schema: Schema = {
     collections: {
         posts: postSchema,
         logs: logSchema,
         media: mediaSchema,
         showcase: showcaseSchema,
+        ideas: ideasSchema,
+        books: bookSchema,
     },
     richTextMediaProviderCollection: "media"
 };
@@ -208,8 +240,8 @@ function toConvexField(field: Field): any {
             })
         case "boolean":
             return v.boolean()
-        case "int64":
-            return v.int64()
+        case "number":
+            return v.number()
         case StringArrayField:
             return v.array(v.string())
         case MediaField:
