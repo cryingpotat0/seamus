@@ -1,20 +1,22 @@
-import { createContext, ReactNode, useContext } from 'react';
+import { createContext, ReactNode, useContext } from "react";
 
 export type MediaContextValue = {
-  uploadMedia: (file: File) => Promise<{ storageId: string; storageUrl: string }>;
+  uploadMedia: (
+    file: File
+  ) => Promise<{ storageId: string; storageUrl: string }>;
   downloadMedia: (storageId: string) => Promise<{ storageUrl: string }>;
 };
 
 const MediaContext = createContext<MediaContextValue | null>(null);
 
-export function MediaProvider({ 
+export function MediaProvider({
   children,
   uploadMedia,
-  downloadMedia 
-}: { 
+  downloadMedia,
+}: {
   children: ReactNode;
-  uploadMedia: MediaContextValue['uploadMedia'];
-  downloadMedia: MediaContextValue['downloadMedia'];
+  uploadMedia: MediaContextValue["uploadMedia"];
+  downloadMedia: MediaContextValue["downloadMedia"];
 }): JSX.Element {
   return (
     <MediaContext.Provider value={{ uploadMedia, downloadMedia }}>
@@ -26,7 +28,7 @@ export function MediaProvider({
 export function useMedia(): MediaContextValue {
   const context = useContext(MediaContext);
   if (!context) {
-    throw new Error('useMedia must be used within a MediaProvider');
+    throw new Error("useMedia must be used within a MediaProvider");
   }
   return context;
-} 
+}

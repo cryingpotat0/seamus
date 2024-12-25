@@ -6,20 +6,20 @@
  *
  */
 
-import type { LexicalEditor } from 'lexical';
+import type { LexicalEditor } from "lexical";
 
-import { $createCodeNode, $isCodeNode } from '@lexical/code';
+import { $createCodeNode, $isCodeNode } from "@lexical/code";
 import {
     editorStateFromSerializedDocument,
     exportFile,
     importFile,
     SerializedDocument,
     serializedDocumentFromEditorState,
-} from '@lexical/file';
-import { useCollaborationContext } from '@lexical/react/LexicalCollaborationContext';
-import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
-import { mergeRegister } from '@lexical/utils';
-import { $generateHtmlFromNodes } from '@lexical/html';
+} from "@lexical/file";
+import { useCollaborationContext } from "@lexical/react/LexicalCollaborationContext";
+import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
+import { mergeRegister } from "@lexical/utils";
+import { $generateHtmlFromNodes } from "@lexical/html";
 import {
     $createTextNode,
     $getRoot,
@@ -27,30 +27,29 @@ import {
     CLEAR_EDITOR_COMMAND,
     CLEAR_HISTORY_COMMAND,
     COMMAND_PRIORITY_EDITOR,
-} from 'lexical';
-import { useCallback, useEffect, useState } from 'react';
+} from "lexical";
+import { useCallback, useEffect, useState } from "react";
 
-import { INITIAL_SETTINGS } from '../../appSettings';
-import useFlashMessage from '../../hooks/useFlashMessage';
-import useModal from '../../hooks/useModal';
-import Button from '../../ui/Button';
-import { docFromHash, docToHash } from '../../utils/docSerialization';
-import { PLAYGROUND_TRANSFORMERS } from '../MarkdownTransformers';
+import { INITIAL_SETTINGS } from "../../appSettings";
+import useFlashMessage from "../../hooks/useFlashMessage";
+import useModal from "../../hooks/useModal";
+import Button from "../../ui/Button";
+import { docFromHash, docToHash } from "../../utils/docSerialization";
 import {
     SPEECH_TO_TEXT_COMMAND,
     SUPPORT_SPEECH_RECOGNITION,
-} from '../SpeechToTextPlugin';
+} from "../SpeechToTextPlugin";
 
 async function sendEditorState(editor: LexicalEditor): Promise<void> {
     const stringifiedEditorState = JSON.stringify(editor.getEditorState());
     try {
-        await fetch('http://localhost:1235/setEditorState', {
+        await fetch("http://localhost:1235/setEditorState", {
             body: stringifiedEditorState,
             headers: {
-                Accept: 'application/json',
-                'Content-type': 'application/json',
+                Accept: "application/json",
+                "Content-type": "application/json",
             },
-            method: 'POST',
+            method: "POST",
         });
     } catch {
         // NO-OP
@@ -61,20 +60,20 @@ async function validateEditorState(editor: LexicalEditor): Promise<void> {
     const stringifiedEditorState = JSON.stringify(editor.getEditorState());
     let response = null;
     try {
-        response = await fetch('http://localhost:1235/validateEditorState', {
+        response = await fetch("http://localhost:1235/validateEditorState", {
             body: stringifiedEditorState,
             headers: {
-                Accept: 'application/json',
-                'Content-type': 'application/json',
+                Accept: "application/json",
+                "Content-type": "application/json",
             },
-            method: 'POST',
+            method: "POST",
         });
     } catch {
         // NO-OP
     }
     if (response !== null && response.status === 403) {
         throw new Error(
-            'Editor state validation failed! Server did not accept changes.',
+            "Editor state validation failed! Server did not accept changes."
         );
     }
 }
@@ -83,7 +82,7 @@ async function shareDoc(doc: SerializedDocument): Promise<void> {
     const url = new URL(window.location.toString());
     url.hash = await docToHash(doc);
     const newUrl = url.toString();
-    window.history.replaceState({}, '', newUrl);
+    window.history.replaceState({}, "", newUrl);
     await window.navigator.clipboard.writeText(newUrl);
 }
 
@@ -105,7 +104,7 @@ export default function ActionsPlugin({
             return;
         }
         docFromHash(window.location.hash).then((doc) => {
-            if (doc && doc.source === 'Playground') {
+            if (doc && doc.source === "Playground") {
                 editor.setEditorState(editorStateFromSerializedDocument(editor, doc));
                 editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined);
             }
@@ -136,8 +135,8 @@ export default function ActionsPlugin({
                 if (
                     !isEditable &&
                     dirtyElements.size > 0 &&
-                    !tags.has('historic') &&
-                    !tags.has('collaboration')
+                    !tags.has("historic") &&
+                    !tags.has("collaboration")
                 ) {
                     validateEditorState(editor);
                 }
@@ -156,7 +155,7 @@ export default function ActionsPlugin({
                         }
                     }
                 });
-            },
+            }
         );
     }, [editor, isEditable]);
 
@@ -196,12 +195,12 @@ export default function ActionsPlugin({
                         setIsSpeechToText(!isSpeechToText);
                     }}
                     className={
-                        'action-button action-button-mic ' +
-                        (isSpeechToText ? 'active' : '')
+                        "action-button action-button-mic " +
+                        (isSpeechToText ? "active" : "")
                     }
                     title="Speech To Text"
-                    aria-label={`${isSpeechToText ? 'Enable' : 'Disable'
-                        } speech to text`}>
+                    aria-label={`${isSpeechToText ? "Enable" : "Disable"} speech to text`}
+                >
                     <i className="mic" />
                 </button>
             )}
@@ -209,7 +208,8 @@ export default function ActionsPlugin({
                 className="action-button import"
                 onClick={() => importFile(editor)}
                 title="Import"
-                aria-label="Import editor state from JSON">
+                aria-label="Import editor state from JSON"
+            >
                 <i className="import" />
             </button>
 
@@ -218,27 +218,29 @@ export default function ActionsPlugin({
                 onClick={() =>
                     exportFile(editor, {
                         fileName: `Playground ${new Date().toISOString()}`,
-                        source: 'Playground',
+                        source: "Playground",
                     })
                 }
                 title="Export"
-                aria-label="Export editor state to JSON">
+                aria-label="Export editor state to JSON"
+            >
                 <i className="export" />
             </button>
             <button
                 className="action-button clear"
                 disabled={isEditorEmpty}
                 onClick={() => {
-                    showModal('Clear editor', (onClose) => (
+                    showModal("Clear editor", (onClose) => (
                         <ShowClearDialog editor={editor} onClose={onClose} />
                     ));
                 }}
                 title="Clear"
-                aria-label="Clear editor contents">
+                aria-label="Clear editor contents"
+            >
                 <i className="clear" />
             </button>
             <button
-                className={`action-button ${!isEditable ? 'unlock' : 'lock'}`}
+                className={`action-button ${!isEditable ? "unlock" : "lock"}`}
                 onClick={() => {
                     // Send latest editor state to commenting validation server
                     // if (isEditable) {
@@ -247,18 +249,20 @@ export default function ActionsPlugin({
                     editor.setEditable(!editor.isEditable());
                 }}
                 title="Read-Only Mode"
-                aria-label={`${!isEditable ? 'Unlock' : 'Lock'} read-only mode`}>
-                <i className={!isEditable ? 'unlock' : 'lock'} />
+                aria-label={`${!isEditable ? "Unlock" : "Lock"} read-only mode`}
+            >
+                <i className={!isEditable ? "unlock" : "lock"} />
             </button>
             <button
                 className="action-button export"
                 onClick={() =>
                     editor.update(() => {
-                        console.log($generateHtmlFromNodes(editor, null))
+                        console.log($generateHtmlFromNodes(editor, null));
                     })
                 }
                 title="Export 2"
-                aria-label="Export editor state to HTML">
+                aria-label="Export editor state to HTML"
+            >
                 <i className="export" />
             </button>
             {modal}
@@ -282,14 +286,16 @@ function ShowClearDialog({
                         editor.dispatchCommand(CLEAR_EDITOR_COMMAND, undefined);
                         editor.focus();
                         onClose();
-                    }}>
+                    }}
+                >
                     Clear
-                </Button>{' '}
+                </Button>{" "}
                 <Button
                     onClick={() => {
                         editor.focus();
                         onClose();
-                    }}>
+                    }}
+                >
                     Cancel
                 </Button>
             </div>

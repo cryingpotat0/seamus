@@ -6,16 +6,16 @@
  *
  */
 
-import {SerializedDocument} from '@lexical/file';
+import { SerializedDocument } from "@lexical/file";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function* generateReader<T = any>(
-  reader: ReadableStreamDefaultReader<T>,
+  reader: ReadableStreamDefaultReader<T>
 ) {
   let done = false;
   while (!done) {
     const res = await reader.read();
-    const {value} = res;
+    const { value } = res;
     if (value !== undefined) {
       yield value;
     }
@@ -24,7 +24,7 @@ async function* generateReader<T = any>(
 }
 
 async function readBytestoString(
-  reader: ReadableStreamDefaultReader,
+  reader: ReadableStreamDefaultReader
 ): Promise<string> {
   const output = [];
   const chunkSize = 0x8000;
@@ -33,11 +33,11 @@ async function readBytestoString(
       output.push(String.fromCharCode(...value.subarray(i, i + chunkSize)));
     }
   }
-  return output.join('');
+  return output.join("");
 }
 
 export async function docToHash(doc: SerializedDocument): Promise<string> {
-  const cs = new CompressionStream('gzip');
+  const cs = new CompressionStream("gzip");
   const writer = cs.writable.getWriter();
   const [, output] = await Promise.all([
     writer
@@ -46,21 +46,21 @@ export async function docToHash(doc: SerializedDocument): Promise<string> {
     readBytestoString(cs.readable.getReader()),
   ]);
   return `#doc=${btoa(output)
-    .replace(/\//g, '_')
-    .replace(/\+/g, '-')
-    .replace(/=+$/, '')}`;
+    .replace(/\//g, "_")
+    .replace(/\+/g, "-")
+    .replace(/=+$/, "")}`;
 }
 
 export async function docFromHash(
-  hash: string,
+  hash: string
 ): Promise<SerializedDocument | null> {
   const m = /^#doc=(.*)$/.exec(hash);
   if (!m) {
     return null;
   }
-  const ds = new DecompressionStream('gzip');
+  const ds = new DecompressionStream("gzip");
   const writer = ds.writable.getWriter();
-  const b64 = atob(m[1].replace(/_/g, '/').replace(/-/g, '+'));
+  const b64 = atob(m[1].replace(/_/g, "/").replace(/-/g, "+"));
   const array = new Uint8Array(b64.length);
   for (let i = 0; i < b64.length; i++) {
     array[i] = b64.charCodeAt(i);
@@ -68,10 +68,10 @@ export async function docFromHash(
   const closed = writer.write(array).then(() => writer.close());
   const output = [];
   for await (const chunk of generateReader(
-    ds.readable.pipeThrough(new TextDecoderStream()).getReader(),
+    ds.readable.pipeThrough(new TextDecoderStream()).getReader()
   )) {
     output.push(chunk);
   }
   await closed;
-  return JSON.parse(output.join(''));
+  return JSON.parse(output.join(""));
 }

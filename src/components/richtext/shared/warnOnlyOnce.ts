@@ -7,7 +7,7 @@
  */
 
 export default function warnOnlyOnce(message: string) {
-  if (!__DEV__) {
+  if (!import.meta.env.DEV) {
     return;
   }
   let run = false;

@@ -9,8 +9,8 @@
 export default function simpleDiffWithCursor(
   a: string,
   b: string,
-  cursor: number,
-): {index: number; insert: string; remove: number} {
+  cursor: number
+): { index: number; insert: string; remove: number } {
   const aLength = a.length;
   const bLength = b.length;
   let left = 0; // number of same characters counting from left

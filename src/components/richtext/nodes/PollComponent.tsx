@@ -6,14 +6,14 @@
  *
  */
 
-import type {Option, Options, PollNode} from './PollNode';
+import type { Option, Options, PollNode } from "./PollNode";
 
-import './PollNode.css';
+import "./PollNode.css";
 
-import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
-import {mergeRegister} from '@lexical/utils';
+import { useCollaborationContext } from "@lexical/react/LexicalCollaborationContext";
+import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
+import { useLexicalNodeSelection } from "@lexical/react/useLexicalNodeSelection";
+import { mergeRegister } from "@lexical/utils";
 import {
   $getNodeByKey,
   $getSelection,
@@ -24,13 +24,13 @@ import {
   KEY_BACKSPACE_COMMAND,
   KEY_DELETE_COMMAND,
   NodeKey,
-} from 'lexical';
-import * as React from 'react';
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+} from "lexical";
+import * as React from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import Button from '../ui/Button';
-import joinClasses from '../utils/joinClasses';
-import {$isPollNode, createPollOption} from './PollNode';
+import Button from "../ui/Button";
+import joinClasses from "../utils/joinClasses";
+import { $isPollNode, createPollOption } from "./PollNode";
 
 function getTotalVotes(options: Options): number {
   return options.reduce((totalVotes, next) => {
@@ -51,10 +51,10 @@ function PollOptionComponent({
   totalVotes: number;
   withPollNode: (
     cb: (pollNode: PollNode) => void,
-    onSelect?: () => void,
+    onSelect?: () => void
   ) => void;
 }): JSX.Element {
-  const {clientID} = useCollaborationContext();
+  const { clientID } = useCollaborationContext();
   const checkboxRef = useRef(null);
   const votesArray = option.votes;
   const checkedIndex = votesArray.indexOf(clientID);
@@ -66,9 +66,10 @@ function PollOptionComponent({
     <div className="PollNode__optionContainer">
       <div
         className={joinClasses(
-          'PollNode__optionCheckboxWrapper',
-          checked && 'PollNode__optionCheckboxChecked',
-        )}>
+          "PollNode__optionCheckboxWrapper",
+          checked && "PollNode__optionCheckboxChecked"
+        )}
+      >
         <input
           ref={checkboxRef}
           className="PollNode__optionCheckbox"
@@ -84,10 +85,10 @@ function PollOptionComponent({
       <div className="PollNode__optionInputWrapper">
         <div
           className="PollNode__optionInputVotes"
-          style={{width: `${votes === 0 ? 0 : (votes / totalVotes) * 100}%`}}
+          style={{ width: `${votes === 0 ? 0 : (votes / totalVotes) * 100}%` }}
         />
         <span className="PollNode__optionInputVotesCount">
-          {votes > 0 && (votes === 1 ? '1 vote' : `${votes} votes`)}
+          {votes > 0 && (votes === 1 ? "1 vote" : `${votes} votes`)}
         </span>
         <input
           className="PollNode__optionInput"
@@ -105,7 +106,7 @@ function PollOptionComponent({
               () => {
                 target.selectionStart = selectionStart;
                 target.selectionEnd = selectionEnd;
-              },
+              }
             );
           }}
           placeholder={`Option ${index + 1}`}
@@ -114,8 +115,8 @@ function PollOptionComponent({
       <button
         disabled={options.length < 3}
         className={joinClasses(
-          'PollNode__optionDelete',
-          options.length < 3 && 'PollNode__optionDeleteDisabled',
+          "PollNode__optionDelete",
+          options.length < 3 && "PollNode__optionDeleteDisabled"
         )}
         aria-label="Remove"
         onClick={() => {
@@ -160,12 +161,12 @@ export default function PollComponent({
       }
       return false;
     },
-    [editor, isSelected],
+    [editor, isSelected]
   );
 
   useEffect(() => {
     return mergeRegister(
-      editor.registerUpdateListener(({editorState}) => {
+      editor.registerUpdateListener(({ editorState }) => {
         setSelection(editorState.read(() => $getSelection()));
       }),
       editor.registerCommand<MouseEvent>(
@@ -183,24 +184,24 @@ export default function PollComponent({
 
           return false;
         },
-        COMMAND_PRIORITY_LOW,
+        COMMAND_PRIORITY_LOW
       ),
       editor.registerCommand(
         KEY_DELETE_COMMAND,
         $onDelete,
-        COMMAND_PRIORITY_LOW,
+        COMMAND_PRIORITY_LOW
       ),
       editor.registerCommand(
         KEY_BACKSPACE_COMMAND,
         $onDelete,
-        COMMAND_PRIORITY_LOW,
-      ),
+        COMMAND_PRIORITY_LOW
+      )
     );
   }, [clearSelection, editor, isSelected, nodeKey, $onDelete, setSelected]);
 
   const withPollNode = (
     cb: (node: PollNode) => void,
-    onUpdate?: () => void,
+    onUpdate?: () => void
   ): void => {
     editor.update(
       () => {
@@ -209,7 +210,7 @@ export default function PollComponent({
           cb(node);
         }
       },
-      {onUpdate},
+      { onUpdate }
     );
   };
 
@@ -223,8 +224,9 @@ export default function PollComponent({
 
   return (
     <div
-      className={`PollNode__container ${isFocused ? 'focused' : ''}`}
-      ref={ref}>
+      className={`PollNode__container ${isFocused ? "focused" : ""}`}
+      ref={ref}
+    >
       <div className="PollNode__inner">
         <h2 className="PollNode__heading">{question}</h2>
         {options.map((option, index) => {

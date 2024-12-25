@@ -6,8 +6,8 @@
  *
  */
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$wrapNodeInElement} from '@lexical/utils';
+import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
+import { $wrapNodeInElement } from "@lexical/utils";
 import {
   $createParagraphNode,
   $insertNodes,
@@ -16,21 +16,21 @@ import {
   createCommand,
   LexicalCommand,
   LexicalEditor,
-} from 'lexical';
-import {useEffect, useState} from 'react';
-import * as React from 'react';
+} from "lexical";
+import { useEffect, useState } from "react";
+import * as React from "react";
 
 import {
   $createPollNode,
   createPollOption,
   PollNode,
-} from '../../nodes/PollNode';
-import Button from '../../ui/Button';
-import {DialogActions} from '../../ui/Dialog';
-import TextInput from '../../ui/TextInput';
+} from "../../nodes/PollNode";
+import Button from "../../ui/Button";
+import { DialogActions } from "../../ui/Dialog";
+import TextInput from "../../ui/TextInput";
 
 export const INSERT_POLL_COMMAND: LexicalCommand<string> = createCommand(
-  'INSERT_POLL_COMMAND',
+  "INSERT_POLL_COMMAND"
 );
 
 export function InsertPollDialog({
@@ -40,7 +40,7 @@ export function InsertPollDialog({
   activeEditor: LexicalEditor;
   onClose: () => void;
 }): JSX.Element {
-  const [question, setQuestion] = useState('');
+  const [question, setQuestion] = useState("");
 
   const onClick = () => {
     activeEditor.dispatchCommand(INSERT_POLL_COMMAND, question);
@@ -51,7 +51,7 @@ export function InsertPollDialog({
     <>
       <TextInput label="Question" onChange={setQuestion} value={question} />
       <DialogActions>
-        <Button disabled={question.trim() === ''} onClick={onClick}>
+        <Button disabled={question.trim() === ""} onClick={onClick}>
           Confirm
         </Button>
       </DialogActions>
@@ -63,7 +63,7 @@ export default function PollPlugin(): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   useEffect(() => {
     if (!editor.hasNodes([PollNode])) {
-      throw new Error('PollPlugin: PollNode not registered on editor');
+      throw new Error("PollPlugin: PollNode not registered on editor");
     }
 
     return editor.registerCommand<string>(
@@ -80,7 +80,7 @@ export default function PollPlugin(): JSX.Element | null {
 
         return true;
       },
-      COMMAND_PRIORITY_EDITOR,
+      COMMAND_PRIORITY_EDITOR
     );
   }, [editor]);
   return null;

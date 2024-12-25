@@ -20,7 +20,7 @@
 }
 
 .selected-heading-wrapper::before {
-  content: ' ';
+  content: " ";
   position: absolute;
   display: inline-block;
   left: -30px;
@@ -79,7 +79,7 @@
 }
 
 .headings::before {
-  content: ' ';
+  content: " ";
   position: absolute;
   height: 220px;
   width: 4px;

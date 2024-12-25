@@ -6,8 +6,8 @@
  *
  */
 
-import {TOGGLE_LINK_COMMAND} from '@lexical/link';
-import {HeadingTagType} from '@lexical/rich-text';
+import { TOGGLE_LINK_COMMAND } from "@lexical/link";
+import { HeadingTagType } from "@lexical/rich-text";
 import {
   COMMAND_PRIORITY_NORMAL,
   FORMAT_ELEMENT_COMMAND,
@@ -16,11 +16,11 @@ import {
   KEY_MODIFIER_COMMAND,
   LexicalEditor,
   OUTDENT_CONTENT_COMMAND,
-} from 'lexical';
-import {Dispatch, useEffect} from 'react';
+} from "lexical";
+import { Dispatch, useEffect } from "react";
 
-import {useToolbarState} from '../../context/ToolbarContext';
-import {sanitizeUrl} from '../../utils/url';
+import { useToolbarState } from "../../context/ToolbarContext";
+import { sanitizeUrl } from "../../utils/url";
 import {
   clearFormatting,
   formatBulletList,
@@ -32,7 +32,7 @@ import {
   formatQuote,
   updateFontSize,
   UpdateFontSizeType,
-} from '../ToolbarPlugin/utils';
+} from "../ToolbarPlugin/utils";
 import {
   isCenterAlign,
   isClearFormatting,
@@ -55,7 +55,7 @@ import {
   isStrikeThrough,
   isSubscript,
   isSuperscript,
-} from './shortcuts';
+} from "./shortcuts";
 
 export default function ShortcutsPlugin({
   editor,
@@ -64,7 +64,7 @@ export default function ShortcutsPlugin({
   editor: LexicalEditor;
   setIsLinkEditMode: Dispatch<boolean>;
 }): null {
-  const {toolbarState} = useToolbarState();
+  const { toolbarState } = useToolbarState();
 
   useEffect(() => {
     const keyboardShortcutsHandler = (payload: KeyboardEvent) => {
@@ -75,7 +75,7 @@ export default function ShortcutsPlugin({
         formatParagraph(editor);
       } else if (isFormatHeading(event)) {
         event.preventDefault();
-        const {code} = event;
+        const { code } = event;
         const headingSize = `h${code[code.length - 1]}` as HeadingTagType;
         formatHeading(editor, toolbarState.blockType, headingSize);
       } else if (isFormatBulletList(event)) {
@@ -95,7 +95,7 @@ export default function ShortcutsPlugin({
         formatQuote(editor, toolbarState.blockType);
       } else if (isStrikeThrough(event)) {
         event.preventDefault();
-        editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'strikethrough');
+        editor.dispatchCommand(FORMAT_TEXT_COMMAND, "strikethrough");
       } else if (isIndent(event)) {
         event.preventDefault();
         editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
@@ -104,45 +104,45 @@ export default function ShortcutsPlugin({
         editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
       } else if (isCenterAlign(event)) {
         event.preventDefault();
-        editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center');
+        editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, "center");
       } else if (isLeftAlign(event)) {
         event.preventDefault();
-        editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'left');
+        editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, "left");
       } else if (isRightAlign(event)) {
         event.preventDefault();
-        editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'right');
+        editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, "right");
       } else if (isJustifyAlign(event)) {
         event.preventDefault();
-        editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'justify');
+        editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, "justify");
       } else if (isSubscript(event)) {
         event.preventDefault();
-        editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'subscript');
+        editor.dispatchCommand(FORMAT_TEXT_COMMAND, "subscript");
       } else if (isSuperscript(event)) {
         event.preventDefault();
-        editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'superscript');
+        editor.dispatchCommand(FORMAT_TEXT_COMMAND, "superscript");
       } else if (isInsertCodeBlock(event)) {
         event.preventDefault();
-        editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'code');
+        editor.dispatchCommand(FORMAT_TEXT_COMMAND, "code");
       } else if (isIncreaseFontSize(event)) {
         event.preventDefault();
         updateFontSize(
           editor,
           UpdateFontSizeType.increment,
-          toolbarState.fontSizeInputValue,
+          toolbarState.fontSizeInputValue
         );
       } else if (isDecreaseFontSize(event)) {
         event.preventDefault();
         updateFontSize(
           editor,
           UpdateFontSizeType.decrement,
-          toolbarState.fontSizeInputValue,
+          toolbarState.fontSizeInputValue
         );
       } else if (isClearFormatting(event)) {
         event.preventDefault();
         clearFormatting(editor);
       } else if (isInsertLink(event)) {
         event.preventDefault();
-        const url = toolbarState.isLink ? null : sanitizeUrl('https://');
+        const url = toolbarState.isLink ? null : sanitizeUrl("https://");
         setIsLinkEditMode(!toolbarState.isLink);
 
         editor.dispatchCommand(TOGGLE_LINK_COMMAND, url);
@@ -154,7 +154,7 @@ export default function ShortcutsPlugin({
     return editor.registerCommand(
       KEY_MODIFIER_COMMAND,
       keyboardShortcutsHandler,
-      COMMAND_PRIORITY_NORMAL,
+      COMMAND_PRIORITY_NORMAL
     );
   }, [
     editor,
