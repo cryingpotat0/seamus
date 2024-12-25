@@ -192,13 +192,16 @@ function CollectionTable({
 
 function renderTableCell(value: any, fieldSchema: Field | undefined) {
     if (!fieldSchema) {
-        return "Unknown field type";
+        return "<missing field>";
+    }
+    if (!value) {
+        return "<undefined>";
     }
     switch (fieldSchema.type) {
         case PlainText:
             return value;
         case RichText:
-            return "Rich text";
+            return "<Rich text>";
         case BooleanField:
             return value ? "Yes" : "No";
         case DateField:
@@ -210,7 +213,7 @@ function renderTableCell(value: any, fieldSchema: Field | undefined) {
         case MediaField:
             return "<media>";
         case undefined:
-            return "Unknown field type";
+            return "<Unknown field type>";
         default:
             let _exhaustiveCheck: never = fieldSchema.type;
             throw new Error("Unreachable");
