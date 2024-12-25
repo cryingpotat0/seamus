@@ -168,6 +168,10 @@ const showcaseSchema: CollectionSchema = {
             name: "url",
             type: PlainText,
         },
+        {
+            name: "tags",
+            type: StringArrayField,
+        },
     ]
 }
 
