@@ -49,7 +49,7 @@ export function ListView() {
     const [showMigration, setShowMigration] = useState(false);
 
     const handleAddNew = async (collectionName: string) => {
-        const newItemId = await addItem({ collectionName, item: {} });
+        const newItemId = await addItem({ collectionName, item: {}, auth });
         setSelectedItem({ collectionName, id: newItemId });
     };
 
