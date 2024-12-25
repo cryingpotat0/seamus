@@ -1,0 +1,9 @@
+version: '3'
+
+services:
+  cms:
+    build: .
+    ports:
+      - '3000:80'
+    working_dir: /home/node/app/
+    env_file: .env.local

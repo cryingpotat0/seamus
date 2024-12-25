@@ -39,7 +39,6 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "convex": "^1.17.3",
-    "date-fns": "^4.1.0",
     "katex": "^0.16.10",
     "lexical": "0.21.0",
     "lodash-es": "^4.17.21",
