@@ -7,12 +7,14 @@ import type {
     NodeKey,
     Spread,
 } from 'lexical';
+import { parse } from 'node-html-parser';
 
 import { BlockWithAlignableContents } from '@lexical/react/LexicalBlockWithAlignableContents';
 import {
     DecoratorBlockNode,
     SerializedDecoratorBlockNode,
 } from '@lexical/react/LexicalDecoratorBlockNode';
+import { useEffect, useState } from 'react';
 
 type JupyterHtmlComponentProps = Readonly<{
     className: Readonly<{
@@ -21,29 +23,56 @@ type JupyterHtmlComponentProps = Readonly<{
     }>;
     format: ElementFormatType | null;
     nodeKey: NodeKey;
-    htmlContent: string;
+    cellId: string;
+    url: string;
 }>;
 
-export type JupyterHtmlNodeArgs = { url: string; cellId: string; htmlContent: string };
+export type JupyterHtmlNodeArgs = { url: string; cellId: string; };
 
 function JupyterHtmlComponent({
     className,
     format,
     nodeKey,
-    htmlContent,
+    cellId,
+    url,
 }: JupyterHtmlComponentProps) {
+
+    const [htmlContent, setHtmlContent] = useState('');
+    useEffect(() => {
+        (async () => {
+            const res = await fetch(`https://${import.meta.env.VITE_DEPLOYMENT_NAME}.convex.site/proxy/${url}`, {
+                method: 'GET',
+            })
+            const htmlContent = parse(await res.text());
+            if (cellId?.length) {
+                const cells = htmlContent.querySelectorAll('[id^="cell-id="]');
+                const parent = cells[0].parentNode;
+                const cellIdAsArr = (Array.isArray(cellId) ? cellId : [cellId]).map((id) => `cell-id=${id}`);
+                for (const cell of cells) {
+                    // If the cell id exists in cellIdAsArr, do not remove it
+                    if (!cellIdAsArr.includes(cell.id)) {
+                        parent.removeChild(cell);
+                    }
+                }
+            }
+            setHtmlContent(htmlContent.toString());
+        })();
+
+    }, []);
 
     return (
         <BlockWithAlignableContents
             className={className}
             format={format}
             nodeKey={nodeKey}>
-            <iframe
-                width="100%"
-                height="315"
-                srcDoc={htmlContent}
-                allowFullScreen={true}
-            />
+            {htmlContent.length === 0 ? <div>Loading...</div> :
+                <iframe
+                    width="100%"
+                    height="315"
+                    srcDoc={htmlContent}
+                    allowFullScreen={true}
+                />
+            }
         </BlockWithAlignableContents>
     );
 }
@@ -52,7 +81,6 @@ export type SerializedJupyterHtmlNode = Spread<
     {
         url: string;
         cellId: string;
-        htmlContent: string;
     },
     SerializedDecoratorBlockNode
 >;
@@ -60,7 +88,6 @@ export type SerializedJupyterHtmlNode = Spread<
 export class JupyterHtmlNode extends DecoratorBlockNode {
     __url: string
     __cellId: string;
-    __htmlContent: string;
 
     static getType(): string {
         return 'jupyter_html';
@@ -70,7 +97,6 @@ export class JupyterHtmlNode extends DecoratorBlockNode {
         return new JupyterHtmlNode({
             cellId: node.__cellId,
             url: node.__url,
-            htmlContent: node.__htmlContent,
         }, node.__format, node.__key);
     }
 
@@ -85,7 +111,6 @@ export class JupyterHtmlNode extends DecoratorBlockNode {
             ...super.exportJSON(),
             cellId: this.__cellId,
             url: this.__url,
-            htmlContent: this.__htmlContent,
             type: 'jupyter_html',
             version: 1,
         };
@@ -95,14 +120,12 @@ export class JupyterHtmlNode extends DecoratorBlockNode {
         super(format, key);
         this.__cellId = args.cellId;
         this.__url = args.url;
-        this.__htmlContent = args.htmlContent;
     }
 
     exportDOM(): DOMExportOutput {
-        const element = document.createElement('iframe');
-        element.width = '100%';
-        element.height = '315';
-        element.srcdoc = this.__htmlContent;
+        const element = document.createElement('jupyter-renderer');
+        element.dataset.cellId = this.__cellId;
+        element.dataset.url = this.__url;
         element.classList.add('JupyterHtml');
         return { element };
     }
@@ -128,12 +151,15 @@ export class JupyterHtmlNode extends DecoratorBlockNode {
             base: embedBlockTheme.base || '',
             focus: embedBlockTheme.focus || '',
         };
+        console.log('JupyterHtmlNode.decorate', this.__url, this.__cellId);
         return (
             <JupyterHtmlComponent
                 className={className}
                 format={this.__format}
                 nodeKey={this.getKey()}
-                htmlContent={this.__htmlContent}
+                url={this.__url}
+                cellId={this.__cellId}
+
             />
         );
     }

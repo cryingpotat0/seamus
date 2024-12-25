@@ -8,6 +8,7 @@ export const list = query({
         collectionName: v.string(),
     },
     handler: async (ctx, args) => {
+        // TODO: don't hardcode the sorting
         const items = await ctx.db.query(args.collectionName).collect();
         const collectionSchema = schema.collections[args.collectionName];
 
@@ -19,6 +20,7 @@ export const list = query({
                 }
             }
         }
+
 
         return items;
 

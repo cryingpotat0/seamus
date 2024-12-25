@@ -88,6 +88,7 @@ import {
     formatParagraph,
     formatQuote,
 } from './utils';
+import { INSERT_CANNON_COMMAND } from '../CannonPlugin';
 
 const rootTypeToRootName = {
     root: 'Root',
@@ -1010,6 +1011,14 @@ export default function ToolbarPlugin({
                                     className="item">
                                     <i className="icon table" />
                                     <span className="text">Table</span>
+                                </DropDownItem>
+                                <DropDownItem
+                                    onClick={() => {
+                                        editor.dispatchCommand(INSERT_CANNON_COMMAND, "");
+                                    }}
+                                    className="item">
+                                    <i className="icon code" />
+                                    <span className="text">Cannon Codeblock</span>
                                 </DropDownItem>
                                 <DropDownItem
                                     onClick={() => {

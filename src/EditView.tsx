@@ -8,6 +8,7 @@ import { FieldDisplay } from './components/FieldDisplay';
 import { useCallback } from "react";
 import { ConvexHttpClient } from "convex/browser";
 import { MediaProvider } from './components/richtext/context/MediaContext';
+import lzstring from 'lz-string';
 
 // TODO: is there a better way?
 const convex = new ConvexHttpClient(import.meta.env.VITE_CONVEX_URL as string);
@@ -92,14 +93,20 @@ export function EditView({
     const handleSave = async () => {
         try {
             // TODO: do this on a copy of editedItem? Or take the state in etc. this is kinda hacky rn.
+            // console.log('editedItem', richTextEditorRefs);
             for (const [fieldName, richFieldDataRefs] of Object.entries(richTextEditorRefs)) {
+                const lexicalJson = JSON.stringify(richFieldDataRefs.lexicalJson.current);
+                // const compressed = lzstring.compressToUTF16(lexicalJson)
+                // // console.log('compressed', compressed)
+                // console.log('compressed length', compressed.length, lexicalJson.length)
+                // console.log('decompressed', lzstring.decompress(compressed))
                 const richFieldData = {
-                    lexicalJson: JSON.stringify(richFieldDataRefs.lexicalJson.current),
+                    lexicalJson,
                     html: richFieldDataRefs.html.current,
                 };
                 editedItem[fieldName] = richFieldData
             }
-            console.log('rich field data', editedItem);
+            // console.log('rich field data', editedItem);
 
             for (const field of collection.fields) {
                 if (field.type === "media" && editedItem[field.name]) {

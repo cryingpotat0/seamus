@@ -1,14 +1,15 @@
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
-import { PlainText, RichText } from "../lib/schema";
+import { BooleanField, DateField, MediaField, NumberField, PlainText, RichText, StringArrayField } from "../lib/schema";
 import RichTextEditor from './richtext';
 import { Button } from "./ui/button";
+import lzstring from 'lz-string'
 
 
 
 // Define all possible field types
-type FieldType = typeof PlainText | typeof RichText | "boolean" | "date" | "int64" | "stringarray" | "media";
+type FieldType = PlainText | RichText | BooleanField | DateField | NumberField | MediaField | StringArrayField
 
 interface Field {
     name: string;
@@ -26,8 +27,6 @@ interface FieldDisplayProps {
 }
 
 export function FieldDisplay({ field, value, onChange, richTextEditorRefs }: FieldDisplayProps) {
-
-
     const renderField = () => {
         switch (field.type) {
             case PlainText:
@@ -38,9 +37,22 @@ export function FieldDisplay({ field, value, onChange, richTextEditorRefs }: Fie
                     />
                 );
             case RichText:
+                let initialEditorState;
+                try {
+                    JSON.parse(value?.lexicalJson);
+                    initialEditorState = value?.lexicalJson;
+                } catch (e) {
+                    console.log('trying to decompress');
+                    // Maybe it's compressed while in this intermediary state.
+                    initialEditorState = lzstring.decompressFromUTF16(value?.lexicalJson);
+                    // console.log('decompressed', initialEditorState);
+                    if (!initialEditorState) {
+                        initialEditorState = value?.lexicalJson;
+                    }
+                }
                 return (
                     <RichTextEditor
-                        initialEditorState={value?.['lexicalJson']}
+                        initialEditorState={initialEditorState}
                         editorRef={richTextEditorRefs}
                     />
                 );
@@ -60,7 +72,7 @@ export function FieldDisplay({ field, value, onChange, richTextEditorRefs }: Fie
                             onChange(field, date?.toISOString())}
                     />
                 );
-            case "int64":
+            case "number":
                 return (
                     <Input
                         type="number"

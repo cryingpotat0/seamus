@@ -71,33 +71,35 @@ export function MigrationView({
                 // }
 
                 if (field.type === RichText) {
-                    if (!value) {
-                        processedRow[field.name] = {
-                            lexicalJson: JSON.stringify({}),
-                            html: ''
-                        }
-                    } else {
-                        // Convert markdown to Lexical format
-                        const editor = createHeadlessEditor({
-                            nodes: [...PlaygroundNodes],
-                            onError: () => { },
-                        });
+                    // Convert markdown to Lexical format
+                    const editor = createHeadlessEditor({
+                        nodes: [...PlaygroundNodes],
+                        onError: () => { },
+                    });
 
-                        editor.update(() => {
-                            $convertFromMarkdownString(value, TRANSFORMERS);
-                        });
+                    let html = '';
+                    editor.update(() => {
+                        $convertFromMarkdownString(value || "", TRANSFORMERS);
+                        html = $generateHtmlFromNodes(editor, null);
+                    }, {
+                        discrete: true,
 
-                        const editorState = editor.getEditorState();
-                        let html = '';
-                        editor.update(() => {
-                            html = $generateHtmlFromNodes(editor, null);
-                        });
+                    });
 
-                        processedRow[field.name] = {
-                            lexicalJson: JSON.stringify(editorState),
-                            html
-                        };
-                    }
+
+                    const editorState = editor.getEditorState();
+                    // let html = '';
+                    // let editorState;
+                    // editor.update(() => {
+                    //     editorState = editor.getEditorState();
+                    //     console.log(editorState.toJSON());
+                    // });
+
+
+                    processedRow[field.name] = {
+                        lexicalJson: JSON.stringify(editorState.toJSON()),
+                        html
+                    };
                 } else {
                     processedRow[field.name] = value;
                 }

@@ -77,6 +77,10 @@ const postSchema: CollectionSchema = {
             name: "content",
             type: RichText,
         },
+        {
+            name: "tags",
+            type: StringArrayField,
+        },
     ]
 };
 

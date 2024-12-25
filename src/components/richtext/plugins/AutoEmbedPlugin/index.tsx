@@ -19,7 +19,6 @@ import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext
 import { useMemo, useState } from 'react';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import { parse } from 'node-html-parser';
 
 import useModal from '../../hooks/useModal';
 import Button from '../../ui/Button';
@@ -162,9 +161,7 @@ export const JupyterHtmlEmbedConfig: PlaygroundEmbedConfig = {
         const jupyterArgs: JupyterHtmlNodeArgs = {
             url: result.url,
             cellId: result.id,
-            htmlContent: result.data as string,
         };
-        console.log('dispatching', jupyterArgs);
         editor.dispatchCommand(INSERT_JUPYTER_HTML_COMMAND, JSON.stringify(jupyterArgs));
     },
 
@@ -183,27 +180,11 @@ export const JupyterHtmlEmbedConfig: PlaygroundEmbedConfig = {
             const cellId = match[1];
             const url = text; // TODO: maybe remove cellid?
 
-            const res = await fetch(`https://${import.meta.env.VITE_DEPLOYMENT_NAME}.convex.site/proxy/${url}`, {
-                method: 'GET',
-            })
-            const htmlContent = parse(await res.text());
-            if (cellId?.length) {
-                const cells = htmlContent.querySelectorAll('[id^="cell-id="]');
-                const parent = cells[0].parentNode;
-                const cellIdAsArr = (Array.isArray(cellId) ? cellId : [cellId]).map((id) => `cell-id=${id}`);
-                for (const cell of cells) {
-                    // If the cell id exists in cellIdAsArr, do not remove it
-                    if (!cellIdAsArr.includes(cell.id)) {
-                        parent.removeChild(cell);
-                    }
-                }
-            }
 
             console.log(match);
             return {
                 url,
                 id: cellId,
-                data: htmlContent.toString(),
             };
         }
 

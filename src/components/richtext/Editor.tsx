@@ -68,6 +68,7 @@ import TwitterPlugin from './plugins/TwitterPlugin';
 import YouTubePlugin from './plugins/YouTubePlugin';
 import ContentEditable from './ui/ContentEditable';
 import JupyterHtmlPlugin from './plugins/JupyterHtmlPlugin';
+import CannonPlugin from './plugins/CannonPlugin';
 
 const CAN_USE_DOM: boolean =
     typeof window !== 'undefined' &&
@@ -185,6 +186,7 @@ export default function Editor(): JSX.Element {
                     <InlineImagePlugin />
                     <LinkPlugin hasLinkAttributes={hasLinkAttributes} />
                     <PollPlugin />
+                    <CannonPlugin />
                     <TwitterPlugin />
                     <YouTubePlugin />
                     <FigmaPlugin />

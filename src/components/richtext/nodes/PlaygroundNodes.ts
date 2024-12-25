@@ -39,6 +39,7 @@ import { StickyNode } from './StickyNode';
 import { TweetNode } from './TweetNode';
 import { YouTubeNode } from './YouTubeNode';
 import { JupyterHtmlNode } from './JupyterHtmlNode';
+import { CannonNode } from './CannonNode';
 
 const PlaygroundNodes: Array<Klass<LexicalNode>> = [
     HeadingNode,
@@ -55,6 +56,7 @@ const PlaygroundNodes: Array<Klass<LexicalNode>> = [
     LinkNode,
     OverflowNode,
     PollNode,
+    CannonNode,
     StickyNode,
     ImageNode,
     InlineImageNode,
