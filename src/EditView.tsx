@@ -17,19 +17,18 @@ import { useCallback } from "react";
 import { ConvexHttpClient } from "convex/browser";
 import { MediaProvider } from "./components/richtext/context/MediaContext";
 import { auth } from "./auth";
+import { useNavigate, useParams, Navigate } from "react-router-dom";
 
-// TODO: is there a better way?
 const convex = new ConvexHttpClient(import.meta.env.VITE_CONVEX_URL as string);
 
-export function EditView({
-    collectionName,
-    itemId,
-    onClose,
-}: {
-    collectionName: string;
-    itemId: string;
-    onClose: () => void;
-}) {
+export function EditView() {
+    const navigate = useNavigate();
+    const { collectionName, itemId } = useParams();
+
+    if (!collectionName || !itemId) {
+        return <Navigate to="/collections" replace />;
+    }
+
     const item = useQuery(api.collections.get, { collectionName, id: itemId, auth });
     const [editedItem, setEditedItem] = useState(item);
     const [error, setError] = useState<Error | null>(null);
@@ -66,7 +65,6 @@ export function EditView({
 
     const uploadRichTextMedia = useCallback(async (file: File) => {
         const uploadUrl = await convex.mutation(api.collections.generateUploadUrl, { auth });
-        // Upload file
         const result = await fetch(uploadUrl, {
             method: "POST",
             headers: {
@@ -80,7 +78,6 @@ export function EditView({
             auth,
         });
 
-        // Save it to the media collection for tracking.
         await convex.mutation(api.collections.add, {
             collectionName: mediaCollectionName,
             auth,
@@ -95,7 +92,7 @@ export function EditView({
         });
 
         return { storageId, storageUrl };
-    }, []);
+    }, [mediaCollectionName, itemId]);
 
     const downloadRichTextMedia = useCallback(async (storageId: string) => {
         const storageUrl = await convex.query(api.collections.generateDownloadUrl, {
@@ -107,32 +104,23 @@ export function EditView({
 
     const handleSave = async () => {
         try {
-            // TODO: do this on a copy of editedItem? Or take the state in etc. this is kinda hacky rn.
-            // console.log('editedItem', richTextEditorRefs);
             for (const [fieldName, richFieldDataRefs] of Object.entries(
                 richTextEditorRefs
             )) {
                 const lexicalJson = JSON.stringify(
                     richFieldDataRefs.lexicalJson.current
                 );
-                // const compressed = lzstring.compressToUTF16(lexicalJson)
-                // // console.log('compressed', compressed)
-                // console.log('compressed length', compressed.length, lexicalJson.length)
-                // console.log('decompressed', lzstring.decompress(compressed))
                 const richFieldData = {
                     lexicalJson,
                     html: richFieldDataRefs.html.current,
                 };
                 editedItem[fieldName] = richFieldData;
             }
-            // console.log('rich field data', editedItem);
 
             for (const field of collection.fields) {
                 if (field.type === "media" && editedItem[field.name]) {
                     const { file, mediaUrl: _, mediaType } = editedItem[field.name];
                     if (file) {
-                        // Poor man's way of not overwriting existing uploads..
-                        // probably should use something hash based instead.
                         const mediaUrl = await generateUploadUrl({ auth });
                         const result = await fetch(mediaUrl, {
                             method: "POST",
@@ -150,7 +138,7 @@ export function EditView({
             }
 
             await saveItem({ collectionName, item: editedItem, auth });
-            onClose();
+            navigate(`/collections/${collectionName}`);
         } catch (e) {
             console.error(e);
             setError(e instanceof Error ? e : new Error("An unknown error occurred"));
@@ -162,32 +150,33 @@ export function EditView({
     }
 
     return (
-        <>
-            <div className="p-4 border rounded-lg">
-                <MediaProvider
-                    uploadMedia={uploadRichTextMedia}
-                    downloadMedia={downloadRichTextMedia}
+        <div className="p-4 border rounded-lg">
+            <MediaProvider
+                uploadMedia={uploadRichTextMedia}
+                downloadMedia={downloadRichTextMedia}
+            >
+                <h2 className="text-2xl mb-4">Edit {collectionName} Item</h2>
+                {collection.fields.map((field) => (
+                    <FieldDisplay
+                        key={field.name}
+                        field={field}
+                        value={editedItem[field.name]}
+                        onChange={handleChange}
+                        richTextEditorRefs={
+                            field.type === RichText
+                                ? richTextEditorRefs[field.name]
+                                : undefined
+                        }
+                    />
+                ))}
+                <Button onClick={handleSave}>Save</Button>
+                <Button 
+                    variant="outline" 
+                    onClick={() => navigate(`/collections/${collectionName}`)}
                 >
-                    <h2 className="text-2xl mb-4">Edit {collectionName} Item</h2>
-                    {collection.fields.map((field) => (
-                        <FieldDisplay
-                            key={field.name}
-                            field={field}
-                            value={editedItem[field.name]}
-                            onChange={handleChange}
-                            richTextEditorRefs={
-                                field.type === RichText
-                                    ? richTextEditorRefs[field.name]
-                                    : undefined
-                            }
-                        />
-                    ))}
-                    <Button onClick={handleSave}>Save</Button>
-                    <Button variant="outline" onClick={onClose}>
-                        Cancel
-                    </Button>
-                </MediaProvider>
-            </div>
+                    Cancel
+                </Button>
+            </MediaProvider>
 
             <AlertDialog open={error !== null} onOpenChange={() => setError(null)}>
                 <AlertDialogContent>
@@ -204,6 +193,6 @@ export function EditView({
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-        </>
+        </div>
     );
 }

@@ -1,6 +1,7 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
-import { auth } from "./auth"
+import { auth } from "./auth";
+import { useNavigate, useParams, Outlet } from "react-router-dom";
 import {
     Table,
     TableBody,
@@ -12,7 +13,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { EditView } from "./EditView";
 import {
     BooleanField,
     DateField,
@@ -36,26 +36,29 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Trash2 } from "lucide-react";
-import { MigrationView } from "./MigrationView";
 
 const defaultCollection = Object.keys(schema)[0];
 
 export function ListView() {
-    const [selectedItem, setSelectedItem] = useState<{
-        collectionName: string;
-        id: string;
-    } | null>(null);
+    const navigate = useNavigate();
+    const { collectionName: urlCollectionName } = useParams();
+    const [activeCollection, setActiveCollection] = useState(urlCollectionName || defaultCollection);
     const addItem = useMutation(api.collections.add);
-    const [showMigration, setShowMigration] = useState(false);
 
     const handleAddNew = async (collectionName: string) => {
         const newItemId = await addItem({ collectionName, item: {}, auth });
-        setSelectedItem({ collectionName, id: newItemId });
+        navigate(`/collections/${collectionName}/${newItemId}`);
     };
 
     return (
         <div>
-            <Tabs defaultValue={defaultCollection}>
+            <Tabs 
+                value={activeCollection} 
+                onValueChange={(value) => {
+                    setActiveCollection(value);
+                    navigate(`/collections/${value}`);
+                }}
+            >
                 <TabsList>
                     {Object.keys(schema.collections).map((collectionName) => (
                         <TabsTrigger key={collectionName} value={collectionName}>
@@ -68,7 +71,9 @@ export function ListView() {
                         <div className="flex justify-between mb-4">
                             <h2 className="text-2xl">{collectionName}</h2>
                             <div className="flex gap-2">
-                                <Button onClick={() => setShowMigration(true)}>Import</Button>
+                                <Button onClick={() => navigate(`/collections/${collectionName}/import`)}>
+                                    Import
+                                </Button>
                                 <Button onClick={() => handleAddNew(collectionName)}>
                                     Add New
                                 </Button>
@@ -76,34 +81,21 @@ export function ListView() {
                         </div>
                         <CollectionTable
                             collectionName={collectionName}
-                            setSelectedItem={setSelectedItem}
+                            onSelectItem={(id) => navigate(`/collections/${collectionName}/${id}`)}
                         />
-                        {showMigration && (
-                            <MigrationView
-                                collection={collectionName}
-                                onClose={() => setShowMigration(false)}
-                            />
-                        )}
                     </TabsContent>
                 ))}
             </Tabs>
-            {selectedItem && (
-                <EditView
-                    collectionName={selectedItem.collectionName}
-                    itemId={selectedItem.id}
-                    onClose={() => setSelectedItem(null)}
-                />
-            )}
         </div>
     );
 }
 
 function CollectionTable({
     collectionName,
-    setSelectedItem,
+    onSelectItem,
 }: {
     collectionName: string;
-    setSelectedItem: (item: { collectionName: string; id: string }) => void;
+    onSelectItem: (id: string) => void;
 }) {
     const collections = useQuery(api.collections.list, {
         collectionName,
@@ -138,9 +130,7 @@ function CollectionTable({
                             {collection.fields.map((field) => (
                                 <TableCell
                                     key={field.name}
-                                    onClick={() =>
-                                        setSelectedItem({ collectionName, id: item._id })
-                                    }
+                                    onClick={() => onSelectItem(item._id)}
                                 >
                                     {renderTableCell(
                                         item[field.name],

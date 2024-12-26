@@ -12,7 +12,7 @@ import {
 import { auth } from "./auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { NumberField, RichText, schema } from "./lib/schema";
+import { RichText, schema } from "./lib/schema";
 import {
     Tooltip,
     TooltipContent,
@@ -23,6 +23,7 @@ import { createHeadlessEditor } from "@lexical/headless";
 import { $convertFromMarkdownString, TRANSFORMERS } from "@lexical/markdown";
 import PlaygroundNodes from "./components/richtext/nodes/PlaygroundNodes";
 import { $generateHtmlFromNodes } from "@lexical/html";
+import { useNavigate, useParams, Navigate } from "react-router-dom";
 
 type ValidationError = {
     row: number;
@@ -30,16 +31,16 @@ type ValidationError = {
     message: string;
 };
 
-export function MigrationView({
-    collection,
-    onClose,
-}: {
-    collection: string;
-    onClose: () => void;
-}) {
+export function MigrationView() {
+    const navigate = useNavigate();
+    const { collectionName } = useParams();
     const [data, setData] = useState<any[]>([]);
     const [errors, setErrors] = useState<ValidationError[]>([]);
     const saveItems = useMutation(api.collections.saveMany);
+
+    if (!collectionName) {
+        return <Navigate to="/collections" replace />;
+    }
 
     const handleFileUpload = async (
         event: React.ChangeEvent<HTMLInputElement>
@@ -54,7 +55,7 @@ export function MigrationView({
         validateAndProcessData(parsedData);
     };
 
-    const collectionSchema = schema.collections[collection];
+    const collectionSchema = schema.collections[collectionName];
 
     const validateAndProcessData = useCallback(
         async (rawData: any[]) => {
@@ -66,17 +67,7 @@ export function MigrationView({
                     for (const field of collectionSchema.fields) {
                         const value = row[field.name];
 
-                        // if (value === undefined) {
-                        //     newErrors.push({
-                        //         row: rowIndex,
-                        //         column: field.name,
-                        //         message: "Missing required field"
-                        //     });
-                        //     continue;
-                        // }
-
                         if (field.type === RichText) {
-                            // Convert markdown to Lexical format
                             const editor = createHeadlessEditor({
                                 nodes: [...PlaygroundNodes],
                                 onError: () => { },
@@ -94,12 +85,6 @@ export function MigrationView({
                             );
 
                             const editorState = editor.getEditorState();
-                            // let html = '';
-                            // let editorState;
-                            // editor.update(() => {
-                            //     editorState = editor.getEditorState();
-                            //     console.log(editorState.toJSON());
-                            // });
 
                             processedRow[field.name] = {
                                 lexicalJson: JSON.stringify(editorState.toJSON()),
@@ -117,13 +102,13 @@ export function MigrationView({
             setData(processedData);
             setErrors(newErrors);
         },
-        [collection]
+        [collectionSchema.fields]
     );
 
     const handleSave = async () => {
         if (errors.length > 0) return;
-        await saveItems({ collectionName: collection, items: data, auth });
-        onClose();
+        await saveItems({ collectionName, items: data, auth });
+        navigate(`/collections/${collectionName}`);
     };
 
     const hasError = (rowIndex: number, column: string) => {
@@ -141,7 +126,7 @@ export function MigrationView({
     return (
         <div className="p-4">
             <div className="flex justify-between mb-4">
-                <h2 className="text-2xl">Import {collection}</h2>
+                <h2 className="text-2xl">Import {collectionName}</h2>
                 <Input
                     type="file"
                     accept=".jsonl"
@@ -194,7 +179,10 @@ export function MigrationView({
                         <Button onClick={handleSave} disabled={errors.length > 0}>
                             Save All
                         </Button>
-                        <Button variant="outline" onClick={onClose}>
+                        <Button 
+                            variant="outline" 
+                            onClick={() => navigate(`/collections/${collectionName}`)}
+                        >
                             Cancel
                         </Button>
                     </div>
