@@ -28,16 +28,18 @@ Seamus (like CeeEmUss) is a CMS for my blog built on top of Convex. The goal of 
   - Move MDX articles
   - :check: Move logs
   - :check: Move showcase
-  - Move ideas
+  - :check: Move ideas
 - Clean up UI
-  - Improve margin on top
-  - Make edit a modal that pops up
-  - Make UI inline in some cases
+  - :check: Improve margin on top
+  - :check: Make edit a modal that pops up
+  - :check: Make UI inline in some cases
 - Loading states on save
 
 2. Now can come other things like:
 
 - Autodeploy URL
+- Better table
+- Auth
 - Pagination
 - Live preview
 - Autosave
@@ -57,8 +59,11 @@ Seamus (like CeeEmUss) is a CMS for my blog built on top of Convex. The goal of 
   - Automatically support created at/ updated at
 - hydrate media to some static image provider like cloudflare rather than just using the raw convex values
 - migrationview should allow error values
+- publish astro <ContentDisplay /> as a web component? with integrated CSS rules.
 
 3. Make it general
 
 - Allow to connect to a random github etc.
+- npx create-seamus-app
+- connect to starlight
 - Collab editing

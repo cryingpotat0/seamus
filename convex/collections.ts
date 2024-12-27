@@ -20,13 +20,19 @@ export const list = query({
         const items = await ctx.db.query(args.collectionName).collect();
         const collectionSchema = schema.collections[args.collectionName];
 
-        // Hydrate media fields
+        // Hydrate media fields and replace richtext with placeholder
         for (const item of items) {
             for (const field of collectionSchema.fields) {
                 if (field.type === "media" && item[field.name]) {
                     item[field.name].mediaUrl = await ctx.storage.getUrl(
                         item[field.name].mediaId
                     );
+                } else if (field.type === "richText") {
+                    // Replace richtext content with placeholder object
+                    item[field.name] = {
+                        lexicalJson: "",
+                        html: "<Rich text content>"
+                    };
                 }
             }
         }

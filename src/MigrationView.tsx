@@ -68,28 +68,40 @@ export function MigrationView() {
                         const value = row[field.name];
 
                         if (field.type === RichText) {
-                            const editor = createHeadlessEditor({
-                                nodes: [...PlaygroundNodes],
-                                onError: () => { },
-                            });
+                            if (value?.lexicalJson) {
+                                processedRow[field.name] = value;
+                                continue;
+                            } else if (typeof value === "string") {
+                                const editor = createHeadlessEditor({
+                                    nodes: [...PlaygroundNodes],
+                                    onError: () => { },
+                                });
 
-                            let html = "";
-                            editor.update(
-                                () => {
-                                    $convertFromMarkdownString(value || "", TRANSFORMERS);
-                                    html = $generateHtmlFromNodes(editor, null);
-                                },
-                                {
-                                    discrete: true,
-                                }
-                            );
+                                let html = "";
+                                editor.update(
+                                    () => {
+                                        $convertFromMarkdownString(value || "", TRANSFORMERS);
+                                        html = $generateHtmlFromNodes(editor, null);
+                                    },
+                                    {
+                                        discrete: true,
+                                    }
+                                );
 
-                            const editorState = editor.getEditorState();
+                                const editorState = editor.getEditorState();
 
-                            processedRow[field.name] = {
-                                lexicalJson: JSON.stringify(editorState.toJSON()),
-                                html,
-                            };
+                                processedRow[field.name] = {
+                                    lexicalJson: JSON.stringify(editorState.toJSON()),
+                                    html,
+                                };
+                            } else {
+                                newErrors.push({
+                                    row: rowIndex,
+                                    column: field.name,
+                                    message: "Invalid Rich Text Content",
+                                });
+                                continue;
+                            }
                         } else {
                             processedRow[field.name] = value;
                         }
@@ -179,8 +191,8 @@ export function MigrationView() {
                         <Button onClick={handleSave} disabled={errors.length > 0}>
                             Save All
                         </Button>
-                        <Button 
-                            variant="outline" 
+                        <Button
+                            variant="outline"
                             onClick={() => navigate(`/collections/${collectionName}`)}
                         >
                             Cancel
