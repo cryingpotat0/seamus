@@ -135,8 +135,8 @@ function CollectionTable({
 
     const columns = useMemo(() => {
         const columnHelper = createColumnHelper<CollectionItem>();
-        
-        const fieldColumns = collection?.fields.map((field, index) => 
+
+        const fieldColumns = collection?.fields.map((field, index) =>
             columnHelper.accessor((row) => row[field.name], {
                 id: `${collectionName}_${field.name}_${index}`,
                 header: ({ column }) => {
@@ -155,7 +155,7 @@ function CollectionTable({
                 },
                 cell: (info) => renderTableCell(info.getValue(), field),
                 // Enable filtering for text-based fields
-                enableColumnFilter: [PlainText, RichText, StringArrayField].includes(field.type),
+                enableColumnFilter: ([PlainText, RichText, StringArrayField] as Array<Field["type"]>).includes(field.type),
             })
         ) || [];
 
@@ -219,7 +219,7 @@ function CollectionTable({
         globalFilterFn: (row, columnId, filterValue) => {
             const value = row.getValue(columnId);
             if (value == null) return false;
-            
+
             // Convert the value to a string for searching
             let textValue = '';
             if (typeof value === 'string') {
