@@ -8,5 +8,5 @@ RUN pnpm run build
 
 FROM nginx:latest
 WORKDIR /usr/share/nginx/html
-COPY ./nginx.conf /etc/nginx/nginx.conf
 COPY --from=build-stage /app/dist .
+COPY ./nginx.conf /etc/nginx/nginx.conf

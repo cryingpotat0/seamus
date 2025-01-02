@@ -12,7 +12,7 @@ services:
       - traefik.http.routers.cms.rule=Host(`cms.${DOMAIN?:err}`)
       - traefik.http.routers.cms.service=cms
       - traefik.http.services.cms.loadbalancer.server.port=80
-      - traefik.http.routers.ks.middlewares=authelia
+      - traefik.http.routers.cms.middlewares=authelia
       - homepage.name=Blog CMS
       - homepage.href=https://cms.${DOMAIN?:err}
       - homepage.description=CryingPotato CMS
