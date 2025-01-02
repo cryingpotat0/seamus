@@ -1,7 +1,7 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { auth } from "./auth";
-import { useNavigate, useParams, Outlet } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
     Table,
     TableBody,
@@ -49,6 +49,7 @@ import {
 } from "@tanstack/react-table";
 import { Input } from "@/components/ui/input";
 import { ArrowUpDown } from "lucide-react";
+import { Settings } from "lucide-react";
 
 const defaultCollection = Object.keys(schema.collections)[0];
 
@@ -58,9 +59,31 @@ interface CollectionItem {
     [key: string]: any; // This allows for dynamic fields
 }
 
-// Type for the collection schema
-interface CollectionSchema {
-    fields: Field[];
+function DeployButton() {
+    const deployUrl = useQuery(api.settings.get, { key: "deployUrl" });
+
+    const handleDeploy = async () => {
+        if (!deployUrl) {
+            alert("Please set deploy URL in settings first");
+            return;
+        }
+        try {
+            await fetch(deployUrl, { method: "POST" });
+            alert("Deployment triggered successfully");
+        } catch (error: any) {
+            // TODO: this fails with a CORS error, we should use a convex http action instead.
+            alert("Deployment failed: " + error.message);
+        }
+    };
+
+    return (
+        <Button
+            onClick={handleDeploy}
+            title="Deploy"
+        >
+            🚀 Deploy
+        </Button>
+    );
 }
 
 export function ListView() {
@@ -95,9 +118,14 @@ export function ListView() {
                         <div className="flex justify-between mb-4">
                             <h2 className="text-2xl">{collectionName}</h2>
                             <div className="flex gap-2">
+                                <Button onClick={() => navigate("/settings")}>
+                                    <Settings className="h-4 w-4 mr-2" />
+                                    Settings
+                                </Button>
                                 <Button onClick={() => navigate(`/collections/${collectionName}/import`)}>
                                     Import
                                 </Button>
+                                <DeployButton />
                                 <Button onClick={() => handleAddNew(collectionName)}>
                                     Add New
                                 </Button>

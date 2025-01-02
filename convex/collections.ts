@@ -50,6 +50,9 @@ export const get = query({
     handler: async (ctx, args) => {
         staticAuthQuery(args.auth);
         const item = await ctx.db.get(args.id);
+        if (!item) {
+            throw new Error("Item not found");
+        }
         const collectionSchema = schema.collections[args.collectionName];
         // TODO: validate
 
@@ -103,6 +106,9 @@ export const remove = mutation({
         staticAuthQuery(args.auth);
         // Get the item.
         const item = await ctx.db.get(args.id);
+        if (!item) {
+            throw new Error("Failed to generate download URL");
+        }
 
         // Delete all media associated with the item.
         // TODO: is this transactional?

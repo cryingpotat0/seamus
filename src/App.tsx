@@ -3,6 +3,7 @@ import { ConvexProvider, ConvexReactClient } from "convex/react";
 import { ListView } from "./ListView";
 import { EditView } from "./EditView";
 import { MigrationView } from "./MigrationView";
+import { SettingsView } from "./SettingsView";
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
 
@@ -18,6 +19,7 @@ function App() {
             <Route path=":collectionName/import" element={<MigrationView />} />
             <Route path=":collectionName/:itemId" element={<EditView />} />
           </Route>
+          <Route path="/settings" element={<SettingsView />} />
         </Routes>
       </BrowserRouter>
     </ConvexProvider>

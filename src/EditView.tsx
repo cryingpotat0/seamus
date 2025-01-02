@@ -103,6 +103,10 @@ export function EditView() {
     }, []);
 
     const handleSave = async () => {
+        if (!editedItem) {
+            console.error("No item to save");
+            return;
+        }
         try {
             for (const [fieldName, richFieldDataRefs] of Object.entries(
                 richTextEditorRefs
@@ -170,8 +174,8 @@ export function EditView() {
                     />
                 ))}
                 <Button onClick={handleSave}>Save</Button>
-                <Button 
-                    variant="outline" 
+                <Button
+                    variant="outline"
                     onClick={() => navigate(`/collections/${collectionName}`)}
                 >
                     Cancel
