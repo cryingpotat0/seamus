@@ -33,11 +33,15 @@ Seamus (like CeeEmUss) is a CMS for my blog built on top of Convex. The goal of 
   - :check: Improve margin on top
   - :check: Make edit a modal that pops up
   - :check: Make UI inline in some cases
-- Loading states on save
 
 2. Now can come other things like:
 
 - Autodeploy URL
+- input types:
+    - multi select from an enum
+    - rating type that lets you swipe based on a filter
+- vim mode editing
+- Loading states on save
 - Better table
 - Auth
 - Pagination
