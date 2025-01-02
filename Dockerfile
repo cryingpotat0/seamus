@@ -1,4 +1,4 @@
-FROM node:18.12-alpine AS build-stage
+FROM --platform=linux/amd64 node:18.12-alpine AS build-stage
 WORKDIR /app
 COPY package.json .
 RUN corepack enable pnpm
