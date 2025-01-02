@@ -198,6 +198,7 @@ const ideasSchema: CollectionSchema = {
     ],
 };
 
+// This is really a media type.
 const bookSchema: CollectionSchema = {
     fields: [
         {
@@ -219,6 +220,10 @@ const bookSchema: CollectionSchema = {
         {
             name: "rating",
             type: NumberField,
+        },
+        {
+            name: "mediaType",
+            type: PlainText,
         },
         {
             name: "review",
