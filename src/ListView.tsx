@@ -23,6 +23,7 @@ import {
     RichText,
     schema,
     StringArrayField,
+    OptionsField,
 } from "./lib/schema";
 import {
     AlertDialog,
@@ -344,6 +345,8 @@ function renderTableCell(value: any, fieldSchema: Field | undefined) {
             return value?.join(", ");
         case MediaField:
             return "<media>";
+        case OptionsField:
+            return value
         default:
             let _: never = type;
     }

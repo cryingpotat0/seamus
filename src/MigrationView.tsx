@@ -12,7 +12,7 @@ import {
 import { auth } from "./auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { RichText, schema } from "./lib/schema";
+import { RichText, schema } from "./lib/schema/index";
 import {
     Tooltip,
     TooltipContent,

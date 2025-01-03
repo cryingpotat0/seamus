@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { Button } from "@/components/ui/button";
-import { RichText, schema } from "./lib/schema";
+import { RichText, schema } from "./lib/schema/index";
 import {
     AlertDialog,
     AlertDialogAction,

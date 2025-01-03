@@ -2,32 +2,13 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
 import {
-    BooleanField,
-    DateField,
-    MediaField,
-    NumberField,
+    Field,
     PlainText,
     RichText,
-    StringArrayField,
 } from "../lib/schema";
 import RichTextEditor from "./richtext";
 import { Button } from "./ui/button";
 import lzstring from "lz-string";
-
-// Define all possible field types
-type FieldType =
-    | PlainText
-    | RichText
-    | BooleanField
-    | DateField
-    | NumberField
-    | MediaField
-    | StringArrayField;
-
-interface Field {
-    name: string;
-    type: FieldType;
-}
 
 interface FieldDisplayProps {
     field: Field;
@@ -46,7 +27,8 @@ export function FieldDisplay({
     richTextEditorRefs,
 }: FieldDisplayProps) {
     const renderField = () => {
-        switch (field.type) {
+        const fieldType = field.type;
+        switch (fieldType) {
             case PlainText:
                 return (
                     <Input
@@ -114,8 +96,21 @@ export function FieldDisplay({
                 );
             case "media":
                 return <MediaDisplay value={value} onChange={onChange} field={field} />;
+            case "options":
+                return (
+                    <select
+                        value={value}
+                        onChange={(e) => onChange(field, e.target.value)}
+                    >
+                        {field.options.map((option) => (
+                            <option key={option} value={option}>
+                                {option}
+                            </option>
+                        ))}
+                    </select>
+                );
             default:
-                let _exhaustiveCheck: never = field.type;
+                let _exhaustiveCheck: never = fieldType;
         }
     };
 
