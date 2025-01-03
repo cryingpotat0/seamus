@@ -4,6 +4,7 @@ import { Calendar } from "@/components/ui/calendar";
 import {
     Field,
     PlainText,
+    RelationField,
     RichText,
 } from "../lib/schema";
 import RichTextEditor from "./richtext";
@@ -37,21 +38,7 @@ export function FieldDisplay({
                     />
                 );
             case RichText:
-                let initialEditorState;
-                try {
-                    JSON.parse(value?.lexicalJson);
-                    initialEditorState = value?.lexicalJson;
-                } catch (e) {
-                    console.log("trying to decompress");
-                    // Maybe it's compressed while in this intermediary state.
-                    initialEditorState = lzstring.decompressFromUTF16(value?.lexicalJson);
-                    // console.log('decompressed', initialEditorState);
-                    if (!initialEditorState) {
-                        initialEditorState = value?.lexicalJson;
-                    }
-                }
-
-
+                let initialEditorState = value?.lexicalJson;
                 // TODO: Hack
                 if (initialEditorState === "{}") {
                     initialEditorState = undefined;
@@ -102,6 +89,11 @@ export function FieldDisplay({
                         value={value}
                         onChange={(e) => onChange(field, e.target.value)}
                     >
+                        {field.optional &&
+                            <option key={"<empty>"} value={undefined}>
+                                empty
+                            </option>
+                        }
                         {field.options.map((option) => (
                             <option key={option} value={option}>
                                 {option}
@@ -109,6 +101,10 @@ export function FieldDisplay({
                         ))}
                     </select>
                 );
+            case RelationField:
+                return (
+                    "relation"
+                )
             default:
                 let _exhaustiveCheck: never = fieldType;
         }
