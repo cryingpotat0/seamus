@@ -263,13 +263,34 @@ export const remove = mutation({
         // Delete all media associated with the item.
         // TODO: is this transactional?
         // TODO: also delete media from the richTextMediaProvider of the collection.
-        // TODO: also delete relations
         const collectionSchema = schema.collections[args.collectionName];
         for (const field of collectionSchema.fields) {
             if (field.type === "media" && item[field.name]) {
                 await ctx.storage.delete(item[field.name].mediaUrl);
+            } else if (field.type === RelationField) {
+                // Find all from relations and delete.
+                const fromRelations = await ctx.db.query("relations").withIndex("by_from", (q) => {
+                    return q
+                        .eq("from.collectionName", args.collectionName)
+                        // @ts-ignore
+                        .eq("from.field", field.name)
+                        .eq("from.itemId", item._id)
+                }).collect();
+                await Promise.all(fromRelations.map((relation) => ctx.db.delete(relation._id)));
+
             }
+
         }
+
+        // Go through every other relationfield and find matching relations.
+        const toRelations = await ctx.db.query("relations").withIndex("by_to", (q) => {
+            return q
+                .eq("to.collectionName", args.collectionName)
+                // @ts-ignore
+                .eq("to.itemId", item._id)
+        }).collect();
+        console.log("Deleting to relations", args.collectionName, args.id, toRelations);
+        await Promise.all(toRelations.map((relation) => ctx.db.delete(relation._id)));
 
         await ctx.db.delete(args.id);
     },
