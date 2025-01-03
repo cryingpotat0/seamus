@@ -325,10 +325,11 @@ function renderTableCell(value: any, fieldSchema: Field | undefined) {
     if (!fieldSchema) {
         return "<missing field>";
     }
-    if (value == undefined) {
+    if (value === undefined) {
         return "<undefined>";
     }
-    switch (fieldSchema.type) {
+    const type = fieldSchema.type;
+    switch (type) {
         case PlainText:
             return value;
         case RichText:
@@ -343,10 +344,7 @@ function renderTableCell(value: any, fieldSchema: Field | undefined) {
             return value?.join(", ");
         case MediaField:
             return "<media>";
-        case undefined:
-            return "<Unknown field type>";
         default:
-            let _exhaustiveCheck: never = fieldSchema.type;
-            throw new Error("Unreachable");
+            let _: never = type;
     }
 }
