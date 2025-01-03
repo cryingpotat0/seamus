@@ -1,4 +1,5 @@
-import { DateField, getDefaultItem, schema, validateSchema } from "../src/lib/schema";
+import { DateField, getDefaultItem, isVirtualField, RelationField, schema, validateSchema } from "../src/lib/schema";
+import { Id } from "./_generated/dataModel";
 import { query, mutation, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 
@@ -54,7 +55,6 @@ export const get = query({
             throw new Error("Item not found");
         }
         const collectionSchema = schema.collections[args.collectionName];
-        // TODO: validate
 
         // Hydrate media fields
         for (const field of collectionSchema.fields) {
@@ -62,11 +62,70 @@ export const get = query({
                 item[field.name].mediaUrl = await ctx.storage.getUrl(
                     item[field.name].mediaId
                 );
+            } else if (field.type === RelationField) {
+                const relations = await ctx.db.query("relations").withIndex("by_from", (q) => {
+                    return q
+                        .eq("from.collectionName", args.collectionName)
+                        // @ts-ignore
+                        .eq("from.field", field.name)
+                        .eq("from.itemId", item._id)
+                }).collect();
+                // TODO: filter null?
+                item[field.name] = await Promise.all(relations.map((relation) => ctx.db.get(relation.to.itemId)));
             }
         }
 
         return item;
     },
+});
+
+export const createAndValidateRelations = internalMutation({
+    args: {
+        from: v.object({
+            collectionName: v.string(),
+            itemId: v.string(),
+            field: v.string(),
+        }),
+        to: v.object({
+            collectionName: v.string(),
+            itemIds: v.array(v.any()),
+        })
+    },
+    handler: async (ctx, args) => {
+        // Validate that all the item IDs exist.
+        for (const id of args.to.itemIds) {
+            if (!ctx.db.get(id)) {
+                throw new Error(`Relation ${id} does not exist`);
+            }
+        }
+
+        // Delete relations for the item that were not passed in.
+        const existingRelations = await ctx.db.query("relations").withIndex("by_from", (q) => {
+            return q
+                .eq("from.collectionName", args.from.collectionName)
+                // @ts-ignore
+                .eq("from.field", args.from.field)
+                .eq("from.itemId", args.from.itemId)
+        }).collect()
+
+        const toDelete = existingRelations.filter((relation) => !args.to.itemIds.includes(relation.to.itemId));
+        const toInsert = args.to.itemIds.filter((id) => !existingRelations.find((relation) => relation.to.itemId === id));
+        console.log("Deleting", toDelete);
+        await Promise.all(toDelete.map((relation) => ctx.db.delete(relation._id)));
+
+        console.log("Inserting", toInsert);
+        await Promise.all(toInsert.map((itemId) => ctx.db.insert("relations", {
+            from: {
+                collectionName: args.from.collectionName,
+                itemId: args.from.itemId,
+                field: args.from.field,
+            },
+            to: {
+                collectionName: args.to.collectionName,
+                itemId,
+            }
+        })))
+    }
 });
 
 export const save = mutation({
@@ -77,11 +136,30 @@ export const save = mutation({
     },
     handler: async (ctx, args) => {
         staticAuthQuery(args.auth);
+
         for (const field of schema.collections[args.collectionName].fields) {
             if (field.type === DateField && field.setOnUpdate) {
                 args.item[field.name] = new Date().toISOString();
+            } else if (field.type === RelationField) {
+                const passedInRelationIds: Array<Id<"string">> = args.item[field.name]?.map((item: any) => item._id) ?? [];
+                await createAndValidateRelations(ctx, {
+                    from: {
+                        collectionName: args.collectionName,
+                        itemId: args.item._id,
+                        field: field.name,
+                    },
+                    to: {
+                        collectionName: field.relatedTo,
+                        itemIds: passedInRelationIds,
+                    }
+                });
+            }
+
+            if (isVirtualField(field)) {
+                delete args.item[field.name];
             }
         }
+
         return await ctx.db.replace(args.item._id, {
             ...args.item,
             valid: validateSchema(args.item, args.collectionName),
@@ -185,6 +263,7 @@ export const remove = mutation({
         // Delete all media associated with the item.
         // TODO: is this transactional?
         // TODO: also delete media from the richTextMediaProvider of the collection.
+        // TODO: also delete relations
         const collectionSchema = schema.collections[args.collectionName];
         for (const field of collectionSchema.fields) {
             if (field.type === "media" && item[field.name]) {
@@ -196,7 +275,7 @@ export const remove = mutation({
     },
 });
 
-// TODO: rename to add many
+// TODO: rename to addMany
 export const saveMany = mutation({
     args: {
         collectionName: v.string(),

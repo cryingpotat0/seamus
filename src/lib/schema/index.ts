@@ -27,6 +27,14 @@ export const OptionsField: OptionsField = "options";
 export type MediaField = "media";
 export const MediaField: MediaField = "media";
 
+// A non-strict, many-to-many relation field (you can delete the underlying
+// relatedTo collection and nothing wlil happen).
+// TBH i am rebuilding a relational db.. so I think just this kind of relation is fine.
+// The input format for relation fields is [fieldName]: Array<{ _id: Id<table> }>
+// The return format for relation fields is [fieldName]: Array<RelationValue> (list format)
+export type RelationField = "relation";
+export const RelationField: RelationField = "relation";
+
 type FieldValidationFunction = (value: any) => boolean;
 
 const NonEmpty: FieldValidationFunction = (value: any) => {
@@ -60,10 +68,14 @@ export type Field = CommonFieldOptions & ({
 } | {
     type: OptionsField;
     options: Array<string>;
+} | {
+    type: RelationField;
+    relatedTo: string;
 });
 
 type CollectionSchema = {
     fields: Array<Field>;
+    displayField: string;
     mediaProvider?: string;
 };
 
@@ -75,6 +87,7 @@ type Schema = {
 
 
 const postSchema: CollectionSchema = {
+    displayField: "title",
     fields: [
         {
             name: "title",
@@ -120,6 +133,7 @@ const postSchema: CollectionSchema = {
 };
 
 const logSchema: CollectionSchema = {
+    displayField: "title",
     fields: [
         {
             name: "title",
@@ -150,6 +164,7 @@ const logSchema: CollectionSchema = {
 };
 
 const mediaSchema: CollectionSchema = {
+    displayField: "description",
     fields: [
         {
             name: "description",
@@ -163,6 +178,7 @@ const mediaSchema: CollectionSchema = {
 };
 
 const showcaseSchema: CollectionSchema = {
+    displayField: "title",
     fields: [
         {
             name: "title",
@@ -210,6 +226,7 @@ const showcaseSchema: CollectionSchema = {
 };
 
 const ideasSchema: CollectionSchema = {
+    displayField: "title",
     fields: [
         {
             name: "title",
@@ -229,6 +246,7 @@ const ideasSchema: CollectionSchema = {
 
 // This is really a media type.
 const bookSchema: CollectionSchema = {
+    displayField: "title",
     fields: [
         {
             name: "title",
@@ -265,6 +283,69 @@ const bookSchema: CollectionSchema = {
     ],
 };
 
+
+const taskSchema: CollectionSchema = {
+    displayField: "content",
+    fields: [
+        {
+            name: "content",
+            type: PlainText,
+            validate: NonEmpty,
+        },
+        {
+            name: "gtdStatus",
+            type: OptionsField,
+            options: ["inbox", "next", "waiting", "scheduled", "someday", "done"],
+            default: "inbox",
+        },
+        {
+            name: "updatedDate",
+            type: DateField,
+            setOnUpdate: true,
+        },
+        {
+            name: "context",
+            type: OptionsField,
+            options: ["work"],
+            optional: true,
+        },
+        {
+            name: "projects",
+            type: RelationField,
+            optional: true,
+            relatedTo: "projects",
+        },
+        {
+            // TODO: do we really need this field?
+            name: "additionalNotes",
+            type: RichText,
+        },
+    ],
+};
+
+const projectSchema: CollectionSchema = {
+    displayField: "title",
+    fields: [
+        {
+            name: "title",
+            type: PlainText,
+        },
+        {
+            name: "description",
+            type: PlainText,
+        },
+        {
+            name: "updatedDate",
+            type: DateField,
+            setOnUpdate: true,
+        },
+        {
+            name: "content",
+            type: RichText,
+        },
+    ],
+};
+
 export const schema: Schema = {
     collections: {
         posts: postSchema,
@@ -273,6 +354,8 @@ export const schema: Schema = {
         showcase: showcaseSchema,
         ideas: ideasSchema,
         books: bookSchema,
+        tasks: taskSchema,
+        projects: projectSchema,
     },
     richTextMediaProviderCollection: "media",
 };
@@ -309,6 +392,12 @@ function toConvexField(field: Field): any {
             }
             const options = field.options;
             return v.union(...options.map((option) => v.literal(option)));
+        case RelationField:
+            if (field.type !== RelationField) {
+                throw new Error("Invalid type");
+            }
+            // Relations are expressed with a separate table.
+            return undefined;
         default:
             let _: never = fieldType
     }
@@ -342,12 +431,24 @@ function toConvexSchema(schema: Schema): any {
         };
         for (const field of collectionSchema.fields) {
             // Everything is optional, there will be a separate "_valid" check.
-            collectionSchemaConvex[field.name] = v.optional(toConvexField(field));
+            const convexField = toConvexField(field);
+            if (convexField !== undefined) {
+                collectionSchemaConvex[field.name] = v.optional(convexField);
+            }
         }
         schemaConvex[collection] = defineTable(collectionSchemaConvex);
     }
     return schemaConvex;
 }
+
+export function isVirtualField(field: Field): boolean {
+    if (field.type === RelationField) {
+        return true;
+    }
+    return false;
+}
+
+
 
 function getDefaultFieldValue(field: Field): any {
     const type = field.type;
@@ -374,6 +475,8 @@ function getDefaultFieldValue(field: Field): any {
             };
         case OptionsField:
             return field.options[0];
+        case RelationField:
+            return [];
         default:
             let _: never = type
     }
@@ -382,7 +485,7 @@ function getDefaultFieldValue(field: Field): any {
 export function getDefaultItem(collection: string): any {
     const item: any = {};
     for (const field of schema.collections[collection].fields) {
-        if (field.optional) {
+        if (field.optional || isVirtualField(field)) {
             continue;
         }
 
@@ -398,9 +501,10 @@ export function getDefaultItem(collection: string): any {
 }
 
 export function validateSchema(item: any, collectionName: string): boolean {
+    console.log("validating schema", item, collectionName)
     const currSchema = schema.collections[collectionName];
     for (const field of currSchema.fields) {
-        if (field.optional) {
+        if (field.optional || isVirtualField(field)) {
             continue;
         }
         if (item[field.name] === undefined) {

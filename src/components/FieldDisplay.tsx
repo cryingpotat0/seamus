@@ -1,15 +1,27 @@
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
+import { auth } from "../auth";
 import {
     Field,
     PlainText,
     RelationField,
     RichText,
+    schema
 } from "../lib/schema";
 import RichTextEditor from "./richtext";
 import { Button } from "./ui/button";
 import lzstring from "lz-string";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
+import { useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import { MultiSelect } from "@/components/ui/multi-select";
 
 interface FieldDisplayProps {
     field: Field;
@@ -85,26 +97,32 @@ export function FieldDisplay({
                 return <MediaDisplay value={value} onChange={onChange} field={field} />;
             case "options":
                 return (
-                    <select
-                        value={value}
-                        onChange={(e) => onChange(field, e.target.value)}
+                    <Select
+                        value={value || "<undefined>"}
+                        onValueChange={(newValue) => {
+                            if (newValue === "<undefined>") {
+                                newValue = undefined
+                            }
+                            onChange(field, newValue)
+                        }}
                     >
-                        {field.optional &&
-                            <option key={"<empty>"} value={undefined}>
-                                empty
-                            </option>
-                        }
-                        {field.options.map((option) => (
-                            <option key={option} value={option}>
-                                {option}
-                            </option>
-                        ))}
-                    </select>
+                        <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select an option" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {field.optional && (
+                                <SelectItem value={"<undefined>"}>empty</SelectItem>
+                            )}
+                            {field.options.map((option) => (
+                                <SelectItem key={option} value={option}>
+                                    {option}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 );
             case RelationField:
-                return (
-                    "relation"
-                )
+                return <RelationFieldDisplay field={field} value={value} onChange={onChange} />;
             default:
                 let _exhaustiveCheck: never = fieldType;
         }
@@ -167,5 +185,45 @@ function MediaDisplay({
                 }}
             />
         </div>
+    );
+}
+
+function RelationFieldDisplay({ 
+    field, 
+    value, 
+    onChange 
+}: { 
+    field: Field, 
+    value: any[], 
+    onChange: FieldDisplayProps["onChange"] 
+}) {
+    // Fetch all items from the related collection
+    const relatedItems = useQuery(api.collections.list, {
+        collectionName: field.relatedTo,
+        auth,
+    }) ?? [];
+    const relatedToSchema = schema.collections[field.relatedTo];
+
+    // Convert items to the format expected by MultiSelect
+    const options = relatedItems.map((item: any) => {
+        return {
+        value: item._id,
+        label: item[relatedToSchema.displayField]
+    }});
+
+    // Convert current value to array of IDs
+    const selectedIds = (value ?? []).map((item: any) => item._id);
+
+    return (
+        <MultiSelect
+            options={options}
+            onValueChange={(newIds) => {
+                // Convert IDs back to array of objects with just _id
+                const newValue = newIds.map(id => ({ _id: id }));
+                onChange(field, newValue);
+            }}
+            defaultValue={selectedIds}
+            placeholder={`Select ${field.name}`}
+        />
     );
 }

@@ -24,6 +24,7 @@ import {
     schema,
     StringArrayField,
     OptionsField,
+    RelationField,
 } from "./lib/schema";
 import {
     AlertDialog,
@@ -326,9 +327,6 @@ function renderTableCell(value: any, fieldSchema: Field | undefined) {
     if (!fieldSchema) {
         return "<missing field>";
     }
-    if (value === undefined) {
-        return "<undefined>";
-    }
     const type = fieldSchema.type;
     switch (type) {
         case PlainText:
@@ -346,7 +344,9 @@ function renderTableCell(value: any, fieldSchema: Field | undefined) {
         case MediaField:
             return "<media>";
         case OptionsField:
-            return value
+            return value || "<empty>";
+        case RelationField:
+            return "<relation>";
         default:
             let _: never = type;
     }
