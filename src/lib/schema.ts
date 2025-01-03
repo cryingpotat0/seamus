@@ -21,6 +21,9 @@ export const BooleanField = "boolean";
 export type StringArrayField = "stringarray";
 export const StringArrayField: StringArrayField = "stringarray";
 
+export type OptionsField = "options";
+export const OptionsField: OptionsField = "options";
+
 export type MediaField = "media";
 export const MediaField: MediaField = "media";
 
@@ -54,6 +57,9 @@ export type Field = CommonFieldOptions & ({
     type: DateField;
     setOnCreate?: boolean;
     setOnUpdate?: boolean;
+} | {
+    type: OptionsField;
+    options: Array<string>;
 });
 
 type CollectionSchema = {
@@ -248,7 +254,9 @@ const bookSchema: CollectionSchema = {
         },
         {
             name: "mediaType",
-            type: PlainText,
+            type: OptionsField,
+            options: ["book", "series", "movie", "play"],
+            default: "book",
         },
         {
             name: "review",
@@ -272,18 +280,19 @@ export const schema: Schema = {
 // Convex utils.
 
 function toConvexField(field: Field): any {
-    switch (field.type) {
-        case "plainText":
-        case "date":
+    const fieldType: Field["type"] = field.type;
+    switch (fieldType) {
+        case PlainText:
+        case DateField:
             return v.string();
-        case "richText":
+        case RichText:
             return v.object({
                 lexicalJson: v.string(),
                 html: v.string(),
             });
-        case "boolean":
+        case BooleanField:
             return v.boolean();
-        case "number":
+        case NumberField:
             return v.number();
         case StringArrayField:
             return v.array(v.string());
@@ -294,9 +303,14 @@ function toConvexField(field: Field): any {
                 // Not the best schema -- but keeps a pointer to the source item.
                 sourceItemId: v.optional(v.string()), // can't use v.id()
             });
+        case OptionsField:
+            if (field.type !== OptionsField) {
+                throw new Error("Invalid type");
+            }
+            const options = field.options;
+            return v.union(...options.map((option) => v.literal(option)));
         default:
-            // let _: never = field
-            throw new Error("Unsupported type");
+            let _: never = fieldType
     }
 }
 
@@ -335,7 +349,8 @@ function toConvexSchema(schema: Schema): any {
     return schemaConvex;
 }
 
-function getDefaultFieldValue(type: Field["type"]): any {
+function getDefaultFieldValue(field: Field): any {
+    const type = field.type;
     switch (type) {
         case PlainText:
             return "";
@@ -357,6 +372,8 @@ function getDefaultFieldValue(type: Field["type"]): any {
                 mediaId: undefined,
                 mediaType: undefined,
             };
+        case OptionsField:
+            return field.options[0];
         default:
             let _: never = type
     }
@@ -374,7 +391,7 @@ export function getDefaultItem(collection: string): any {
         } else if (field.default !== undefined) {
             item[field.name] = field.default;
         } else {
-            item[field.name] = getDefaultFieldValue(field.type)
+            item[field.name] = getDefaultFieldValue(field)
         }
     }
     return item;
