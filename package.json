@@ -8,7 +8,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "convex-dev": "convex dev",
+    "convex-deploy": "convex deploy"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "^0.17.0",

@@ -40,6 +40,7 @@ Seamus (like CeeEmUss) is a CMS for my blog built on top of Convex. The goal of 
 - input types:
     - multi select from an enum
     - rating type that lets you swipe based on a filter
+- image not loading on rich text
 - vim mode editing
 - Loading states on save
 - Better table
@@ -64,6 +65,7 @@ Seamus (like CeeEmUss) is a CMS for my blog built on top of Convex. The goal of 
 - hydrate media to some static image provider like cloudflare rather than just using the raw convex values
 - migrationview should allow error values
 - publish astro <ContentDisplay /> as a web component? with integrated CSS rules.
+- validation reasons
 
 3. Make it general
 

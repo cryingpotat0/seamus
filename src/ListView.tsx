@@ -200,6 +200,7 @@ function CollectionTable({
                             variant="ghost"
                             size="icon"
                             onClick={(e) => {
+                                e.preventDefault();
                                 e.stopPropagation();
                                 setItemToDelete(props.row.original._id);
                             }}
@@ -297,7 +298,12 @@ function CollectionTable({
                     {table.getRowModel().rows.map((row) => (
                         <TableRow
                             key={row.id}
-                            onClick={() => onSelectItem(row.original._id)}
+                            onClick={() => {
+                                if (itemToDelete === null) {
+                                    return onSelectItem(row.original._id)
+                                }
+                            }}
+                            className={row.original.valid === false ? "bg-red-100 hover:bg-red-200" : ""}
                         >
                             {row.getVisibleCells().map((cell) => (
                                 <TableCell key={cell.id}>
@@ -319,7 +325,7 @@ function renderTableCell(value: any, fieldSchema: Field | undefined) {
     if (!fieldSchema) {
         return "<missing field>";
     }
-    if (!value) {
+    if (value == undefined) {
         return "<undefined>";
     }
     switch (fieldSchema.type) {

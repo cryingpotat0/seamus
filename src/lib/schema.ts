@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { defineSchema, defineTable } from "convex/server";
+import { defineTable } from "convex/server";
 
 // Primitive types for the first level of schema - this is what the user will
 // define the schema in.
@@ -24,20 +24,37 @@ export const StringArrayField: StringArrayField = "stringarray";
 export type MediaField = "media";
 export const MediaField: MediaField = "media";
 
+type FieldValidationFunction = (value: any) => boolean;
+
+const NonEmpty: FieldValidationFunction = (value: any) => {
+    return value !== null && value !== undefined && value !== "";
+}
+
+const NonZero: FieldValidationFunction = (value: any) => {
+    return value !== null && value !== undefined && value !== 0;
+}
+
 type CommonFieldOptions = {
     name: string;
+    // All fields are required unless otherwise specified.
+    optional?: boolean;
+    default?: any | (() => any);
+    validate?: FieldValidationFunction;
 };
 
-export type Field = CommonFieldOptions & {
+export type Field = CommonFieldOptions & ({
     type:
     | PlainText
     | RichText
-    | DateField
     | NumberField
     | BooleanField
     | StringArrayField
     | MediaField;
-};
+} | {
+    type: DateField;
+    setOnCreate?: boolean;
+    setOnUpdate?: boolean;
+});
 
 type CollectionSchema = {
     fields: Array<Field>;
@@ -49,15 +66,19 @@ type Schema = {
     richTextMediaProviderCollection: string;
 };
 
+
+
 const postSchema: CollectionSchema = {
     fields: [
         {
             name: "title",
             type: PlainText,
+            validate: NonEmpty,
         },
         {
             name: "slug",
             type: PlainText,
+            validate: NonEmpty,
         },
         {
             name: "description",
@@ -74,10 +95,12 @@ const postSchema: CollectionSchema = {
         {
             name: "pubDate",
             type: DateField,
+            setOnCreate: true,
         },
         {
             name: "updatedDate",
             type: DateField,
+            setOnUpdate: true,
         },
         {
             name: "content",
@@ -107,6 +130,7 @@ const logSchema: CollectionSchema = {
         {
             name: "pubDate",
             type: DateField,
+            setOnUpdate: true,
         },
         {
             name: "content",
@@ -149,10 +173,12 @@ const showcaseSchema: CollectionSchema = {
         {
             name: "pubDate",
             type: DateField,
+            setOnCreate: true,
         },
         {
             name: "updatedDate",
             type: DateField,
+            setOnUpdate: true,
         },
         {
             name: "content",
@@ -174,10 +200,6 @@ const showcaseSchema: CollectionSchema = {
             name: "url",
             type: PlainText,
         },
-        {
-            name: "tags",
-            type: StringArrayField,
-        },
     ],
 };
 
@@ -194,6 +216,7 @@ const ideasSchema: CollectionSchema = {
         {
             name: "updatedDate",
             type: DateField,
+            setOnUpdate: true,
         },
     ],
 };
@@ -212,6 +235,7 @@ const bookSchema: CollectionSchema = {
         {
             name: "pubDate",
             type: DateField,
+            setOnCreate: true,
         },
         {
             name: "year",
@@ -220,6 +244,7 @@ const bookSchema: CollectionSchema = {
         {
             name: "rating",
             type: NumberField,
+            validate: NonZero,
         },
         {
             name: "mediaType",
@@ -308,6 +333,67 @@ function toConvexSchema(schema: Schema): any {
         schemaConvex[collection] = defineTable(collectionSchemaConvex);
     }
     return schemaConvex;
+}
+
+function getDefaultFieldValue(type: Field["type"]): any {
+    switch (type) {
+        case PlainText:
+            return "";
+        case RichText:
+            return {
+                lexicalJson: "",
+                html: "",
+            };
+        case DateField:
+            return new Date().toISOString();
+        case BooleanField:
+            return false;
+        case NumberField:
+            return 0;
+        case StringArrayField:
+            return [];
+        case MediaField:
+            return {
+                mediaId: undefined,
+                mediaType: undefined,
+            };
+        default:
+            let _: never = type
+    }
+}
+
+export function getDefaultItem(collection: string): any {
+    const item: any = {};
+    for (const field of schema.collections[collection].fields) {
+        if (field.optional) {
+            continue;
+        }
+
+        if (typeof field.default === "function") {
+            item[field.name] = field.default();
+        } else if (field.default !== undefined) {
+            item[field.name] = field.default;
+        } else {
+            item[field.name] = getDefaultFieldValue(field.type)
+        }
+    }
+    return item;
+}
+
+export function validateSchema(item: any, collectionName: string): boolean {
+    const currSchema = schema.collections[collectionName];
+    for (const field of currSchema.fields) {
+        if (field.optional) {
+            continue;
+        }
+        if (item[field.name] === undefined) {
+            return false;
+        }
+        if (field.validate && !field.validate(item[field.name])) {
+            return false;
+        }
+    }
+    return true;
 }
 
 export const convexSchema = toConvexSchema(schema);

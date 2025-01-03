@@ -1,5 +1,5 @@
-import { schema } from "../src/lib/schema";
-import { query, mutation } from "./_generated/server";
+import { DateField, getDefaultItem, schema, validateSchema } from "../src/lib/schema";
+import { query, mutation, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 
 // TODO: Hack.
@@ -77,7 +77,15 @@ export const save = mutation({
     },
     handler: async (ctx, args) => {
         staticAuthQuery(args.auth);
-        return await ctx.db.replace(args.item._id, args.item);
+        for (const field of schema.collections[args.collectionName].fields) {
+            if (field.type === DateField && field.setOnUpdate) {
+                args.item[field.name] = new Date().toISOString();
+            }
+        }
+        return await ctx.db.replace(args.item._id, {
+            ...args.item,
+            valid: validateSchema(args.item, args.collectionName),
+        });
     },
 });
 
@@ -89,12 +97,76 @@ export const add = mutation({
     },
     handler: async (ctx, args) => {
         staticAuthQuery(args.auth);
-        return await ctx.db.insert(args.collectionName, {
+        for (const field of schema.collections[args.collectionName].fields) {
+            if (field.type === DateField && (field.setOnUpdate || field.setOnCreate)) {
+                args.item[field.name] = new Date().toISOString();
+            }
+        }
+        const defaultItem = getDefaultItem(args.collectionName);
+        const newItem = {
+            ...defaultItem,
             ...args.item,
-            valid: true, // TODO: add validation
+        };
+        return await ctx.db.insert(args.collectionName, {
+            ...newItem,
+            valid: validateSchema(newItem, args.collectionName),
         });
     },
 });
+
+export const internalValidateAndBackfillDefaults = internalMutation({
+    args: {
+        collectionName: v.string(),
+        action: v.union(v.literal("mutateDryRun"), v.literal("mutate"), v.literal("validate")),
+    },
+    handler: async (ctx, args) => {
+        console.log(`Validating and backfilling defaults with action ${args.action} for ${args.collectionName}`);
+        // Skip valid items.
+        for (const item of await ctx.db.query(args.collectionName).collect()) {
+            const oldItemValid = validateSchema(item, args.collectionName);
+            if (args.action === "validate") {
+                console.log("Validating item", item._id);
+                if (oldItemValid === item.valid) {
+                    console.log("Skipping item", item._id);
+                    continue;
+                } else {
+                    await ctx.db.patch(item._id, {
+                        valid: oldItemValid,
+                    });
+                }
+            } else {
+                if (oldItemValid) {
+                    console.log("Skipping item", item._id);
+                    continue;
+                }
+
+                // Delete all undefineds from the item.
+                for (const [key, value] of Object.entries(item)) {
+                    if (value === undefined) {
+                        delete item[key];
+                    }
+                }
+
+                const defaultItem = getDefaultItem(args.collectionName);
+                const newItem = {
+                    ...defaultItem,
+                    ...item,
+                };
+
+                if (args.action === "mutate") {
+                    console.log(`Replacing ${item._id}`);
+                    await ctx.db.replace(item._id, {
+                        ...newItem,
+                        valid: validateSchema(newItem, args.collectionName),
+                    });
+                } else {
+                    console.log(`Would replace ${item._id} with`, newItem);
+                }
+            }
+        }
+    },
+});
+
 
 export const remove = mutation({
     args: {
@@ -124,6 +196,7 @@ export const remove = mutation({
     },
 });
 
+// TODO: rename to add many
 export const saveMany = mutation({
     args: {
         collectionName: v.string(),
@@ -135,9 +208,10 @@ export const saveMany = mutation({
         // Insert all items in parallel
         await Promise.all(
             args.items.map((item) =>
-                ctx.db.insert(args.collectionName, {
-                    ...item,
-                    valid: true, // TODO: add validation
+                add(ctx, {
+                    collectionName: args.collectionName,
+                    item,
+                    auth: args.auth,
                 })
             )
         );
